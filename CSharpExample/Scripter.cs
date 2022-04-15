@@ -20,8 +20,15 @@ namespace Scripter
         }
         
         [DllImport(ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
-        public static extern sbyte* UObject_GetFullName(UObject* obj);
+        public static extern sbyte* GetFullName(UObject* obj);
 
+        [DllImport(ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr Member(UObject* Object, string MemberName);
+
+        [DllImport(ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
+        public static extern void ProcessEvent(UObject* Object, UObject* Function, IntPtr Params);
+
+        // TODO: Add TArray
 
         [StructLayout(LayoutKind.Sequential)]
         public unsafe struct UObject
@@ -39,7 +46,24 @@ namespace Scripter
             }
             public string GetFullName()
             {
-                return new string(UObject_GetFullName(GetPtrToSelf()));
+                return new string(Main.GetFullName(GetPtrToSelf()));
+            }
+
+            // public T* Member<T>(string MemberName)
+            public IntPtr Member(string MemberName)
+            {
+                // return (T*)Main.Member(GetPtrToSelf(), MemberName);
+                return (IntPtr)Main.Member(GetPtrToSelf(), MemberName);
+            }
+
+            public bool IsValid()
+            {
+                return GetPtrToSelf() == null; // we could also convert to intptr and check if its intptr.zero
+            }
+
+            public void ProcessEvent(UObject* Function, IntPtr Params)
+            {
+                Main.ProcessEvent(GetPtrToSelf(), Function, Params);
             }
         }
 
@@ -61,6 +85,6 @@ namespace Scripter
             System.Threading.Thread.Sleep(-1);
 
             return 0;
-        }
+        }     
     }
 }

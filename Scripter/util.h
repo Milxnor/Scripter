@@ -58,7 +58,7 @@ bool Inject(const std::string& DLLName) // TODO: Remake // skidded go brr https:
 	return true;
 }
 
-bool InjectManaged(const std::wstring& DLLName) // https://github.com/Vacko/Managed-code-injection/blob/master/Bootstrap/DllMain.cpp
+bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Managed-code-injection/blob/master/Bootstrap/DllMain.cpp
 {
 	ICLRRuntimeHost* lpRuntimeHost = NULL;
 	ICLRRuntimeInfo* lpRuntimeInfo = NULL;
@@ -159,14 +159,14 @@ bool InjectManaged(const std::wstring& DLLName) // https://github.com/Vacko/Mana
 
 namespace AppData
 {
-	fs::path Path;
+	static fs::path Path;
 
 	bool Init()
 	{
 		char* buf{};
 		size_t size = MAX_PATH;
 		_dupenv_s(&buf, &size, "LOCALAPPDATA");
-		auto Path = fs::path(buf) / "Scripts";
+		Path = fs::path(buf) / "Scripts";
 
 		bool res = true;
 
@@ -175,4 +175,24 @@ namespace AppData
 
 		return res;
 	}
+}
+
+enum Languages
+{
+	CSharp,
+	JS,
+	UNKNOWN
+};
+
+Languages ConvertLanguage(std::string Lang)
+{
+	std::transform(Lang.begin(), Lang.end(), Lang.begin(), ::tolower);
+
+	if (Lang == "c#" || Lang == "csharp" || Lang == "c sharp")
+		return Languages::CSharp;
+
+	else if (Lang == "js" || Lang == "javascript" || Lang == "java script" || Lang == "nodejs")
+		return Languages::JS;
+
+	return Languages::UNKNOWN;
 }

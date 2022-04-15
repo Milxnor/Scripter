@@ -14,12 +14,22 @@ auto bruh(const char* name)
 extern "C" {
 	DLL_EXPORT UObject* FindObject(const char* name)
 	{
-		std::cout << "FindObject called!\n";
 		return bruh(name);
 	}
 
-	DLL_EXPORT const char* UObject_GetFullName(UObject* Object)
+	DLL_EXPORT const char* GetFullName(UObject* Object)
 	{
 		return Object->GetFullName().c_str();
+	}
+
+	DLL_EXPORT void* Member(UObject* Object, const char* MemberName)
+	{
+		return Object->Member<void>(MemberName);
+	}
+
+	DLL_EXPORT void ProcessEvent(UObject* Object, UObject* Function, void* Params)
+	{
+		// if (Object && Function)
+		Object->ProcessEvent(Function, Params);
 	}
 }
