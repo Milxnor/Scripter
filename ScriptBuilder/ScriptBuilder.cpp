@@ -32,6 +32,12 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 
 	auto name = DllPath.filename().generic_string();
 
+	if (fs::exists("script.json"))
+		fs::remove("script.json");
+
+	if (fs::exists(name))
+		fs::remove(name);
+
 	if (!name.contains(".dll"))
 	{
 		std::cout << "The file is not a dll!\n";
@@ -68,12 +74,20 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 
 	file.write("script.json");
 
-	file.save(name.erase(name.length() - 4, 4) + ".script");
+	const auto script = name.erase(name.length() - 4, 4) + ".script";
 
-	std::cout << "Saved to " + fs::absolute(name + ".script").generic_string() << ".\n";
+	if (fs::exists(script))
+		fs::remove(script);
 
-	fs::remove("script.json");
-	fs::remove(name + ".dll");
+	file.save(script);
+
+	std::cout << "Saved to " + fs::absolute(script).generic_string() << ".\n";
+
+	if (fs::exists("script.json"))
+		fs::remove("script.json");
+
+	if (fs::exists(name + ".dll"))
+		fs::remove(name + ".dll");
 
 	std::cin.get();
 }
