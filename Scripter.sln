@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpExample", "CSharpExam
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CPPExample", "CPPExample\CPPExample.vcxproj", "{B6B6DDCE-4805-42C5-B2E3-52C8C8DE4D93}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScriptBuilder", "ScriptBuilder\ScriptBuilder.vcxproj", "{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{B6B6DDCE-4805-42C5-B2E3-52C8C8DE4D93}.Release|x64.Build.0 = Release|x64
 		{B6B6DDCE-4805-42C5-B2E3-52C8C8DE4D93}.Release|x86.ActiveCfg = Release|x64
 		{B6B6DDCE-4805-42C5-B2E3-52C8C8DE4D93}.Release|x86.Build.0 = Release|x64
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Debug|Any CPU.Build.0 = Debug|x64
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Debug|x64.ActiveCfg = Debug|x64
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Debug|x64.Build.0 = Debug|x64
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Debug|x86.ActiveCfg = Debug|Win32
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Debug|x86.Build.0 = Debug|Win32
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Release|Any CPU.ActiveCfg = Release|x64
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Release|Any CPU.Build.0 = Release|x64
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Release|x64.ActiveCfg = Release|x64
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Release|x64.Build.0 = Release|x64
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Release|x86.ActiveCfg = Release|Win32
+		{22D5961A-C27A-4BB1-9C0A-7B8C12383AD9}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
