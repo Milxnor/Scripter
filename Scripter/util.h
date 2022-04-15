@@ -1,143 +1,178 @@
 #include <Windows.h>
 
 #include <UE/structs.h>
+#include <filesystem>
 
-static uint64_t FindPattern(const char* signature, bool bRelative = false, uint32_t offset = 0, bool bIsVar = false)
+// dotnet includes
+
+#include <mscoree.h>
+#include <metahost.h>
+#pragma comment(lib, "mscoree.lib")
+
+namespace fs = std::filesystem;
+
+bool Inject(const std::string& DLLName) // TODO: Remake // skidded go brr https://github.com/LouisTheXIV/DLL-Injection-Cpp/blob/main/Injector/Injector/Injector/Injector.cpp
 {
-	auto base_address = (uint64_t)GetModuleHandleW(NULL);
-	static auto patternToByte = [](const char* pattern)
-	{
-		auto bytes = std::vector<int>{};
-		const auto start = const_cast<char*>(pattern);
-		const auto end = const_cast<char*>(pattern) + strlen(pattern);
-
-		for (auto current = start; current < end; ++current)
-		{
-			if (*current == '?')
-			{
-				++current;
-				if (*current == '?') ++current;
-				bytes.push_back(-1);
-			}
-			else { bytes.push_back(strtoul(current, &current, 16)); }
-		}
-		return bytes;
-	};
-
-	const auto dosHeader = (PIMAGE_DOS_HEADER)base_address;
-	const auto ntHeaders = (PIMAGE_NT_HEADERS)((std::uint8_t*)base_address + dosHeader->e_lfanew);
-
-	const auto sizeOfImage = ntHeaders->OptionalHeader.SizeOfImage;
-	auto patternBytes = patternToByte(signature);
-	const auto scanBytes = reinterpret_cast<std::uint8_t*>(base_address);
-
-	const auto s = patternBytes.size();
-	const auto d = patternBytes.data();
-
-	for (auto i = 0ul; i < sizeOfImage - s; ++i)
-	{
-		bool found = true;
-		for (auto j = 0ul; j < s; ++j)
-		{
-			if (scanBytes[i + j] != d[j] && d[j] != -1)
-			{
-				found = false;
-				break;
-			}
-		}
-		if (found)
-		{
-			auto address = (uint64_t)&scanBytes[i];
-			if (bIsVar)
-				address = (address + offset + *(int*)(address + 3));
-			if (bRelative && !bIsVar)
-				address = ((address + offset + 4) + *(int*)(address + offset));
-			return address;
-		}
+	char dll_path[MAX_PATH];
+	
+	if (!GetFullPathNameA(DLLName.c_str(), MAX_PATH, dll_path, nullptr)) {
+		MessageBoxA(0, "Failed to get full path of DLL!", "GetFullPathName", MB_ICONERROR);
+		return false;
 	}
-	return NULL;
+	
+	auto ProcID = GetCurrentProcessId();
+	
+	if (!ProcID) {
+		MessageBoxA(0, "Failed to get process id!", "GetProcessID", MB_ICONERROR);
+		return false;
+	}
+
+	HANDLE h_process = OpenProcess(PROCESS_ALL_ACCESS, NULL, ProcID);
+	
+	if (!h_process) {
+		MessageBoxA(0, "Failed to open a handle to process!", "OpenProcess", MB_ICONERROR);
+		return false;
+	}
+	
+	void* allocated_memory = VirtualAllocEx(h_process, nullptr, MAX_PATH, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	
+	if (!allocated_memory) {
+		MessageBoxA(0, "Failed to allocate memory!", "AllocateMemory", MB_ICONERROR);
+		return false;
+	}
+
+	if (!WriteProcessMemory(h_process, allocated_memory, dll_path, MAX_PATH, nullptr)) {
+		MessageBoxA(0, "Failed to write to process memory!", "WriteProcessMemory", MB_ICONERROR);
+		return false;
+	}
+
+	HANDLE h_thread = CreateRemoteThread(h_process, nullptr, NULL, LPTHREAD_START_ROUTINE(LoadLibraryA), allocated_memory, NULL, nullptr);
+	if (!h_thread) {
+		MessageBoxA(0, "Failed to create remote thread!", "CreateRemoteThread", MB_ICONERROR);
+		return false;
+	}
+
+	CloseHandle(h_process);
+	VirtualFreeEx(h_process, allocated_memory, NULL, MEM_RELEASE);
+	
+	return true;
 }
 
-bool Setup() // TODO: Add Realloc
+bool InjectManaged(const std::wstring& DLLName) // https://github.com/Vacko/Managed-code-injection/blob/master/Bootstrap/DllMain.cpp
 {
-	GetEngineVersion = decltype(GetEngineVersion)(FindPattern("40 53 48 83 EC 20 48 8B D9 E8 ? ? ? ? 48 8B C8 41 B8 04 ? ? ? 48 8B D3"));
+	ICLRRuntimeHost* lpRuntimeHost = NULL;
+	ICLRRuntimeInfo* lpRuntimeInfo = NULL;
+	ICLRMetaHost* lpMetaHost = NULL;
+	
+	HRESULT hr = CLRCreateInstance(
+		CLSID_CLRMetaHost,
+		IID_ICLRMetaHost,
+		(LPVOID*)&lpMetaHost
+	);
 
-	if (!GetEngineVersion)
+	if (FAILED(hr))
 	{
-		GetEngineVersion = decltype(GetEngineVersion)(FindPattern("")); // TODO: Put new pattern
+		MessageBoxA(0, "Failed.\n", "CLRCreateInstance", MB_ICONERROR);
 
-		if (!GetEngineVersion)
-		{
-			MessageBoxA(NULL, "Failed to find UKismetSystemLibrary::GetEngineVersion", "Fortnite", MB_OK);
-			return false;
-		}
+		return 0;
 	}
 
-	auto FullVersion = GetEngineVersion().ToString();
+	hr = lpMetaHost->GetRuntime(
+		L"v4.0.30319",
+		IID_PPV_ARGS(&lpRuntimeInfo)
+	);
 
-	std::string FNVer = FullVersion;
-	std::string EngineVer = FullVersion;
-
-	FNVer.erase(0, FNVer.find_last_of("-", FNVer.length() - 1) + 1);
-	EngineVer.erase(EngineVer.find_first_of("-", FNVer.length() - 1), 40);
-
-	if (EngineVer.find_first_of(".") != EngineVer.find_last_of("."))
-		EngineVer.erase(EngineVer.find_last_of("."), 2);
-
-	FN_Version = std::stod(FNVer);
-	Engine_Version = std::stod(EngineVer) * 100;
-
-	ObjObjects = decltype(ObjObjects)(FindPattern("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8D 04 D1 EB 03 48 8B ? 81 48 08 ? ? ? 40 49", false, 7, true));
-
-	if (!ObjObjects)
+	if (FAILED(hr))
 	{
-		MessageBoxA(NULL, "Failed to find FUObjectArray::ObjObjects", "Fortnite", MB_OK);
+		MessageBoxA(0, "Failed.", "GetRuntime", MB_ICONERROR);
+
+		lpMetaHost->Release();
+
 		return false;
 	}
 
-	uint64_t ToStringAddr = 0;
-	uint64_t ProcessEventAddr = 0;
-	uint64_t FreeMemoryAddr = 0;
+	BOOL fLoadable;
+	hr = lpRuntimeInfo->IsLoadable(&fLoadable);
 
-	if (Engine_Version >= 421 && Engine_Version <= 424)
+	if (FAILED(hr) || !fLoadable)
 	{
-		ToStringAddr = FindPattern("48 89 5C 24 ? 57 48 83 EC 30 83 79 04 00 48 8B DA 48 8B F9");
-		ProcessEventAddr = FindPattern("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 8B 41");
-	}
+		MessageBoxA(0, "Failed.", "IsLoadable", MB_ICONERROR);
 
-	if (Engine_Version >= 425)
-	{
-		ToStringAddr = FindPattern("48 89 5C 24 ? 55 56 57 48 8B EC 48 83 EC 30 8B 01 48 8B F1 44 8B 49 04 8B F8 C1 EF 10 48 8B DA 0F B7 C8 89 4D 24 89 7D 20 45 85 C9");
-		ProcessEventAddr = FindPattern("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 8B 41 0C 45 33 F6");
-	}
+		lpRuntimeInfo->Release();
+		lpMetaHost->Release();
 
-	if (Engine_Version >= 421 && Engine_Version <= 426)
-	{
-		FreeMemoryAddr = FindPattern("48 85 C9 74 2E 53 48 83 EC 20 48 8B D9");
-	}
-
-	if (!ToStringAddr)
-	{
-		MessageBoxA(NULL, "Failed to find FName::ToString", "Fortnite", MB_OK);
 		return false;
 	}
 
-	ToStringO = decltype(ToStringO)(ToStringAddr);
+	hr = lpRuntimeInfo->GetInterface(
+		CLSID_CLRRuntimeHost,
+		IID_PPV_ARGS(&lpRuntimeHost)
+	);
 
-	if (!ProcessEventAddr)
+	if (FAILED(hr))
 	{
-		MessageBoxA(NULL, "Failed to find UObject::ProcessEvent", "Fortnite", MB_OK);
+		MessageBoxA(0, "Failed.", "GetInterface", MB_ICONERROR);
+
+		lpRuntimeInfo->Release();
+		lpMetaHost->Release();
+
 		return false;
 	}
 
-	ProcessEventO = decltype(ProcessEventO)(ProcessEventAddr);
+	hr = lpRuntimeHost->Start();
 
-	if (!FreeMemoryAddr)
+	if (FAILED(hr))
 	{
-		MessageBoxA(NULL, "Failed to find FMemory::Free", "Fortnite", MB_OK);
+		MessageBoxA(0, std::string("Failed " + std::to_string(hr) + '.').c_str(), "CLRStart", MB_ICONERROR);
+
+		lpRuntimeHost->Release();
+		lpRuntimeInfo->Release();
+		lpMetaHost->Release();
+
 		return false;
 	}
 
-	FMemory::Free = decltype(FMemory::Free)(FreeMemoryAddr);
+	DWORD dwRetCode = 0;
 
+	hr = lpRuntimeHost->ExecuteInDefaultAppDomain(
+		DLLName.c_str(),
+		L"Scripter.Main",
+		L"Startup",
+		L"",
+		&dwRetCode
+	);
+
+	if (FAILED(hr))
+	{
+		MessageBoxA(0, std::string("Failed " + std::to_string(hr) + '.').c_str(), "ExecuteInDefaultAppDomain", MB_ICONERROR);
+
+		lpRuntimeHost->Stop();
+		lpRuntimeHost->Release();
+		lpRuntimeInfo->Release();
+		lpMetaHost->Release();
+
+		return false;
+	}
+	
+	return true;
+}
+
+namespace AppData
+{
+	fs::path Path;
+
+	bool Init()
+	{
+		char* buf{};
+		size_t size = MAX_PATH;
+		_dupenv_s(&buf, &size, "LOCALAPPDATA");
+		auto Path = fs::path(buf) / "Scripts";
+
+		bool res = true;
+
+		if (!fs::exists(Path))
+			res = fs::create_directory(Path);
+
+		return res;
+	}
 }

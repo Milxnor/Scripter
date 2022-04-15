@@ -23,17 +23,17 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="UE\enums.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="UE\structs.h">
       <Filter>Header Files\UE</Filter>
     </ClInclude>
-    <ClInclude Include="util.h">
-      <Filter>Header Files\UE</Filter>
-    </ClInclude>
-    <ClInclude Include="Languages\languages.h">
+    <ClInclude Include="languages.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UE\enums.h">
+      <Filter>Header Files\UE</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
