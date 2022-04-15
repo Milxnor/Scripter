@@ -46,9 +46,9 @@ namespace Example
 
         public static int Main(String args)
         {
-            // Console.WriteLine("Engine: " + FindObject("FortEngine_")->GetFullName());
-
-            CreateConsole();
+            Console.WriteLine("C#: " + FindObject("FortEngine_")->GetFullName());
+            
+            // CreateConsole();
 
             return 0;
         }

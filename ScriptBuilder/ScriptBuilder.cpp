@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 	std::getline(std::cin, description);
 
 	ordered_json j;
-	j["script_name"] = name;
+	j["script_name"] = name.erase(name.length() - 4, 4);
 	j["language"] = language;
 	j["description"] = description; 
 	

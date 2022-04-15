@@ -42,7 +42,7 @@ namespace Scripter
 
                     auto lang = ConvertLanguage(language);
 
-                    auto dll_path = (path / (scriptName + ".dll"));
+                    auto dll_path = path / scriptName;
 
                     switch (lang)
                     {

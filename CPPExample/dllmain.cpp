@@ -5,7 +5,7 @@
 
 DWORD WINAPI Main(LPVOID)
 {
-    std::cout << FindObject("FortEngine_")->GetFullName() << '\n';
+    std::cout << "CPP: " << FindObject("FortEngine_")->GetFullName() << '\n';
     return 0;
 }
 
