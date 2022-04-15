@@ -58,7 +58,7 @@ bool Inject(const std::string& DLLName) // TODO: Remake // skidded go brr https:
 	return true;
 }
 
-bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Managed-code-injection/blob/master/Bootstrap/DllMain.cpp
+bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Managed-code-injection/blob/master/Bootstrap/DllMain.cpp // TODO: Return error string instead.
 {
 	ICLRRuntimeHost* lpRuntimeHost = NULL;
 	ICLRRuntimeInfo* lpRuntimeInfo = NULL;
@@ -144,7 +144,7 @@ bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Manag
 
 	if (FAILED(hr))
 	{
-		MessageBoxA(0, std::string("Failed " + std::to_string(hr) + '.').c_str(), "ExecuteInDefaultAppDomain", MB_ICONERROR);
+		MessageBoxA(0, std::format("Failed to load {} with error code {}.", std::string(DLLName.begin(), DLLName.end()), std::to_string(hr) + '.').c_str(), "ExecuteInDefaultAppDomain", MB_ICONERROR);
 
 		lpRuntimeHost->Stop();
 		lpRuntimeHost->Release();
@@ -180,6 +180,7 @@ namespace AppData
 enum Languages
 {
 	CSharp,
+	CPP,
 	JS,
 	UNKNOWN
 };
@@ -188,8 +189,11 @@ Languages ConvertLanguage(std::string Lang)
 {
 	std::transform(Lang.begin(), Lang.end(), Lang.begin(), ::tolower);
 
-	if (Lang == "c#" || Lang == "csharp" || Lang == "c sharp")
+	if (Lang == "c#" || Lang == "csharp" || Lang == "c sharp" || Lang == "cs")
 		return Languages::CSharp;
+
+	else if (Lang == "cpp" || Lang == "c++" || Lang == "c plus plus")
+		return Languages::CPP;
 
 	else if (Lang == "js" || Lang == "javascript" || Lang == "java script" || Lang == "nodejs")
 		return Languages::JS;

@@ -50,6 +50,9 @@ namespace Scripter
                         InjectCSharp(dll_path.generic_wstring());
                         AmountOfInjects++;
                         break;
+                    case CPP:
+                        Inject(dll_path.generic_string());
+                        AmountOfInjects++;
                     case JS:
                         Inject(dll_path.generic_string());
                         AmountOfInjects++;

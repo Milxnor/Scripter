@@ -58,7 +58,7 @@ namespace Scripter
 
             public bool IsValid()
             {
-                return GetPtrToSelf() == null; // we could also convert to intptr and check if its intptr.zero
+                return false; // TODO: convert to intptr and check if its intptr.zero
             }
 
             public void ProcessEvent(UObject* Function, IntPtr Params)
@@ -85,6 +85,6 @@ namespace Scripter
             System.Threading.Thread.Sleep(-1);
 
             return 0;
-        }     
+        }
     }
 }
