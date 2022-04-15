@@ -53,3 +53,5 @@ struct UObject
 		Imports::ProcessEvent(this, Fn, nullptr);
 	}
 };
+
+static bool bHasInitialized = false;
