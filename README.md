@@ -9,3 +9,4 @@ A dll that allows you to easily mod Fortnite in popular coding languages.
 - Add JS using node-ffi.
 - Fix console output
 - Figure out how to add rust. The issue is that it can only call C.
+- Make deleting easier/automatic.
