@@ -140,10 +140,10 @@ namespace Scripter
 
 DWORD WINAPI Main(LPVOID)
 {
-    // AllocConsole();
+    AllocConsole();
 
     FILE* file;
-    freopen_s(&file, "Scripter.txt", "w", stdout);
+    freopen_s(&file, "CONOUT$", "w", stdout);
 
     if (!AppData::Init())
     {

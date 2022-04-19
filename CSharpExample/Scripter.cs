@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -7,8 +8,32 @@ using System.Threading.Tasks;
 
 namespace Scripter
 {
+    unsafe class Windows
+    {
+        public const UInt32 StdOutputHandle = 0xFFFFFFF5;
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr GetStdHandle(UInt32 nStdHandle);
+        [DllImport("kernel32.dll")]
+        public static extern void SetStdHandle(UInt32 nStdHandle, IntPtr handle);
+        [DllImport("kernel32")]
+        public static extern bool AllocConsole();
+
+        static internal void CreateConsole()
+        {
+            Windows.AllocConsole();
+
+            var defaultStdout = new IntPtr(7);
+
+            if (Windows.GetStdHandle(Windows.StdOutputHandle) != defaultStdout)
+                Windows.SetStdHandle(Windows.StdOutputHandle, defaultStdout);
+
+            TextWriter writer = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+            Console.SetOut(writer);
+        }
+    }
     unsafe class Main
     {
+
         public static bool bHasInitialized = false; // This is so the dll doesn't inject twice.
         public const string ScripterDLL = @"Scripter.dll";
 
@@ -74,6 +99,8 @@ namespace Scripter
         {
             if (bHasInitialized)
                 return 0;
+
+            // Windows.CreateConsole();
 
             // Put your startup code here.
 
