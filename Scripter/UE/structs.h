@@ -8,9 +8,10 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <regex>
+#include <xorstr.hpp>
 
 #include "enums.h"
-#include <regex>
 
 using namespace std::chrono;
 
@@ -71,7 +72,7 @@ struct Timer
 		dura = end - start;
 
 		float ms = dura.count() * 1000.0f;
-		std::cout << "Took " << ms << "ms \n";
+		std::cout << _("Took ") << ms << _("ms \n");
 	}
 };
 
@@ -93,7 +94,7 @@ public:
 	void Free()
 	{
 		if (!FMemory::Free)
-			MessageBoxA(0, "No FMemory::Free!", "Fortnite", MB_ICONERROR);
+			MessageBoxA(0, _("No FMemory::Free!"), _("Scripter"), MB_ICONERROR);
 		// VirtualFree(Data, 0, MEM_RELEASE);
 		else
 			FMemory::Free(Data);
@@ -117,7 +118,7 @@ public:
 	{
 		if (!FMemory::Realloc)
 		{
-			MessageBoxA(0, "How are you expecting to reserve with no Realloc?", "Fortnite", MB_ICONERROR);
+			MessageBoxA(0, _("How are you expecting to reserve with no Realloc?"), _("Scripter"), MB_ICONERROR);
 			return;
 		}
 
@@ -407,21 +408,6 @@ struct FFieldNew
 	}
 };
 
-struct FProperty : public FField
-{
-	int32_t	ArrayDim;
-	int32_t	ElementSize;
-	EPropertyFlags PropertyFlags;
-	uint16_t RepIndex;
-	TEnumAsByte<ELifetimeCondition> BlueprintReplicationCondition;
-	int32_t	Offset_Internal;
-	FName RepNotifyFunc;
-	FProperty* PropertyLinkNext;
-	FProperty* NextRef;
-	FProperty* DestructorLinkNext;
-	FProperty* PostConstructLinkNext;
-};
-
 struct FPropertyNew : public FFieldNew
 {
 	int32_t	ArrayDim;
@@ -454,7 +440,20 @@ struct UStructNew : UFieldNewProps
 
 struct UClassNew : public UStructNew {};
 
-
+struct FProperty : public FField
+{
+	int32_t	ArrayDim;
+	int32_t	ElementSize;
+	EPropertyFlags PropertyFlags;
+	uint16_t RepIndex;
+	TEnumAsByte<ELifetimeCondition> BlueprintReplicationCondition;
+	int32_t	Offset_Internal;
+	FName RepNotifyFunc;
+	FProperty* PropertyLinkNext;
+	FProperty* NextRef;
+	FProperty* DestructorLinkNext;
+	FProperty* PostConstructLinkNext;
+};
 
 class UStruct : public UFieldNewProps
 {
@@ -520,7 +519,7 @@ int LoopMembersAndFindOffset(UObject* Object, const std::string& MemberName)
 		while (Property)
 		{
 			if (Property->GetName() == MemberName)
-				return *(int*)(Property + 0x44); //Offset_Internal;
+				return ((PropertyType*)Property)->Offset_Internal;
 
 			Property = Property->Next;
 		}
@@ -529,7 +528,7 @@ int LoopMembersAndFindOffset(UObject* Object, const std::string& MemberName)
 
 static int GetOffset(UObject* Object, const std::string& MemberName)
 {
-	if (!MemberName.contains(" /") && Object)
+	if (!MemberName.contains(_(" /")) && Object)
 	{
 		if (Engine_Version <= 420)
 			return LoopMembersAndFindOffset<UClassOldest, UPropertyOld>(Object, MemberName);
@@ -537,7 +536,7 @@ static int GetOffset(UObject* Object, const std::string& MemberName)
 		else if (Engine_Version >= 421 && Engine_Version <= 424)
 			return LoopMembersAndFindOffset<UClassOld, UProperty>(Object, MemberName);
 
-		else if (Engine_Version >= 425)
+		else if (Engine_Version >= 425 && Engine_Version < 500)
 			return LoopMembersAndFindOffset<UClass, FProperty>(Object, MemberName);
 
 		else if (Engine_Version >= 500)
@@ -557,7 +556,7 @@ INL MemberType* UObject::Member(std::string MemberName)
 
 FString(*GetEngineVersion)();
 
-// TODO: There is this 1.9 function, 48 8D 05 D9 51 22 03. It has the CL and stuff. We may be able to determine the version using it.
+// TODO: There is this 1.9 function, 48 8D 05 D9 51 22 03. It has the CL and stuff. We may be able to determine the version using the CL.
 
 static uint64_t FindPattern(const char* signature, bool bRelative = false, uint32_t offset = 0, bool bIsVar = false)
 {
@@ -617,17 +616,17 @@ static uint64_t FindPattern(const char* signature, bool bRelative = false, uint3
 
 bool Setup() // TODO: Add Realloc
 {
-	GetEngineVersion = decltype(GetEngineVersion)(FindPattern("40 53 48 83 EC 20 48 8B D9 E8 ? ? ? ? 48 8B C8 41 B8 04 ? ? ? 48 8B D3"));
+	GetEngineVersion = decltype(GetEngineVersion)(FindPattern(_("40 53 48 83 EC 20 48 8B D9 E8 ? ? ? ? 48 8B C8 41 B8 04 ? ? ? 48 8B D3")));
 
 	std::string FullVersion;
 
 	if (!GetEngineVersion)
 	{
-		auto VerStr = FindPattern("2B 2B 46 6F 72 74 6E 69 74 65 2B 52 65 6C 65 61 73 65 2D 32 ? ? ?");
+		auto VerStr = FindPattern(_("2B 2B 46 6F 72 74 6E 69 74 65 2B 52 65 6C 65 61 73 65 2D ? ? ? ?"));
 
 		if (!VerStr)
 		{
-			MessageBoxA(0, "Failed to find fortnite version!", "Fortnite", MB_ICONERROR);
+			MessageBoxA(0, _("Failed to find fortnite version!"), _("Scripter"), MB_ICONERROR);
 			return false;
 		}
 
@@ -641,22 +640,22 @@ bool Setup() // TODO: Add Realloc
 	std::string FNVer = FullVersion;
 	std::string EngineVer = FullVersion;
 
-	if (!FullVersion.contains("Live") && !FullVersion.contains("Next"))
+	if (!FullVersion.contains(_("Live")) && !FullVersion.contains(_("Next")) && !FullVersion.contains(_("Cert")))
 	{
 		if (Engine_Version < 500)
 		{
-			FNVer.erase(0, FNVer.find_last_of("-", FNVer.length() - 1) + 1);
-			EngineVer.erase(EngineVer.find_first_of("-", FNVer.length() - 1), 40);
+			FNVer.erase(0, FNVer.find_last_of(_("-"), FNVer.length() - 1) + 1);
+			EngineVer.erase(EngineVer.find_first_of(_("-"), FNVer.length() - 1), 40);
 
-			if (EngineVer.find_first_of(".") != EngineVer.find_last_of(".")) // this is for 4.21.0 and itll remove the .0
-				EngineVer.erase(EngineVer.find_last_of("."), 2);
+			if (EngineVer.find_first_of(_(".")) != EngineVer.find_last_of(_("."))) // this is for 4.21.0 and itll remove the .0
+				EngineVer.erase(EngineVer.find_last_of(_(".")), 2);
 
 			Engine_Version = std::stod(EngineVer) * 100;
 		}
 
 		else
 		{
-			const std::regex base_regex("-([0-9.]*)-");
+			const std::regex base_regex(_("-([0-9.]*)-"));
 			std::cmatch base_match;
 
 			std::regex_search(FullVersion.c_str(), base_match, base_regex);
@@ -665,6 +664,9 @@ bool Setup() // TODO: Add Realloc
 		}
 
 		FN_Version = std::stod(FNVer);
+
+		// if (FN_Version >= 16.00 && FN_Version < 18.40)
+			// Engine_Version = 4.27; // 4.26.1;
 	}
 
 	else
@@ -681,68 +683,74 @@ bool Setup() // TODO: Add Realloc
 
 	if (Engine_Version >= 416 && Engine_Version <= 420)
 	{
-		ObjectsAddr = FindPattern("48 8B 05 ? ? ? ? 48 8D 1C C8 81 4B ? ? ? ? ? 49 63 76 30", false, 7, true);
+		ObjectsAddr = FindPattern(_("48 8B 05 ? ? ? ? 48 8D 1C C8 81 4B ? ? ? ? ? 49 63 76 30"), false, 7, true);
 
 		if (!ObjectsAddr)
-			ObjectsAddr = FindPattern("48 8B 05 ? ? ? ? 48 8D 14 C8 EB 03 49 8B D6 8B 42 08 C1 E8 1D A8 01 0F 85 ? ? ? ? F7 86 ? ? ? ? ? ? ? ?", false, 7, true);
+			ObjectsAddr = FindPattern(_("48 8B 05 ? ? ? ? 48 8D 14 C8 EB 03 49 8B D6 8B 42 08 C1 E8 1D A8 01 0F 85 ? ? ? ? F7 86 ? ? ? ? ? ? ? ?"), false, 7, true);
 
 		if (Engine_Version == 420)
-			ToStringAddr = FindPattern("48 89 5C 24 ? 57 48 83 EC 40 83 79 04 00 48 8B DA 48 8B F9 75 23 E8 ? ? ? ? 48 85 C0 74 19 48 8B D3 48 8B C8 E8 ? ? ? ? 48");
+			ToStringAddr = FindPattern(_("48 89 5C 24 ? 57 48 83 EC 40 83 79 04 00 48 8B DA 48 8B F9 75 23 E8 ? ? ? ? 48 85 C0 74 19 48 8B D3 48 8B C8 E8 ? ? ? ? 48"));
 		else
 		{
-			ToStringAddr = FindPattern("40 53 48 83 EC 40 83 79 04 00 48 8B DA 75 19 E8 ? ? ? ? 48 8B C8 48 8B D3 E8 ? ? ? ?");
+			ToStringAddr = FindPattern(_("40 53 48 83 EC 40 83 79 04 00 48 8B DA 75 19 E8 ? ? ? ? 48 8B C8 48 8B D3 E8 ? ? ? ?"));
 
-			if (!ToStringAddr) // This means that we are in season 1.
+			if (!ToStringAddr) // This means that we are in season 1 (i think).
 			{
-				ToStringAddr = FindPattern("48 89 5C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 56 48 83 EC 20 48 8B DA 4C 8B F1 E8 ? ? ? ? 4C 8B C8 41 8B 06 99");
+				ToStringAddr = FindPattern(_("48 89 5C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 56 48 83 EC 20 48 8B DA 4C 8B F1 E8 ? ? ? ? 4C 8B C8 41 8B 06 99"));
 
 				if (ToStringAddr)
 					Engine_Version = 416;
 			}
 		}
 
-		ProcessEventAddr = FindPattern("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 48 63 41 0C 45 33 F6");
-		FreeMemoryAddr = FindPattern("48 85 C9 74 1D 4C 8B 05 ? ? ? ? 4D 85 C0 0F 84 ? ? ? ? 49");
+		ProcessEventAddr = FindPattern(_("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 48 63 41 0C 45 33 F6"));
+		FreeMemoryAddr = FindPattern(_("48 85 C9 74 1D 4C 8B 05 ? ? ? ? 4D 85 C0 0F 84 ? ? ? ? 49"));
 
 		if (!FreeMemoryAddr)
-			FreeMemoryAddr = FindPattern("48 85 C9 74 2E 53 48 83 EC 20 48 8B D9 48 8B 0D ? ? ? ? 48 85 C9 75 0C E8 ? ? ? ? 48 8B 0D ? ? ? ? 48");
+			FreeMemoryAddr = FindPattern(_("48 85 C9 74 2E 53 48 83 EC 20 48 8B D9 48 8B 0D ? ? ? ? 48 85 C9 75 0C E8 ? ? ? ? 48 8B 0D ? ? ? ? 48"));
 
 		bOldObjects = true;
 	}
 
 	if (Engine_Version >= 421 && Engine_Version <= 424)
 	{
-		ToStringAddr = FindPattern("48 89 5C 24 ? 57 48 83 EC 30 83 79 04 00 48 8B DA 48 8B F9");
-		ProcessEventAddr = FindPattern("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 8B 41");
+		ToStringAddr = FindPattern(_("48 89 5C 24 ? 57 48 83 EC 30 83 79 04 00 48 8B DA 48 8B F9"));
+		ProcessEventAddr = FindPattern(_("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? ? ? ? 45 33 F6"));
 	}
 
-	if (Engine_Version >= 425)
+	if (Engine_Version >= 425 && Engine_Version < 500)
 	{
-		ToStringAddr = FindPattern("48 89 5C 24 ? 55 56 57 48 8B EC 48 83 EC 30 8B 01 48 8B F1 44 8B 49 04 8B F8 C1 EF 10 48 8B DA 0F B7 C8 89 4D 24 89 7D 20 45 85 C9");
-		ProcessEventAddr = FindPattern("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 8B 41 0C 45 33 F6");
+		ToStringAddr = FindPattern(_("48 89 5C 24 ? 55 56 57 48 8B EC 48 83 EC 30 8B 01 48 8B F1 44 8B 49 04 8B F8 C1 EF 10 48 8B DA 0F B7 C8 89 4D 24 89 7D 20 45 85 C9"));
+		ProcessEventAddr = FindPattern(_("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 8B 41 0C 45 33 F6"));
 	}
 
 	if (Engine_Version >= 421 && Engine_Version <= 426)
 	{
-		ObjectsAddr = FindPattern("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8D 04 D1 EB 03 48 8B ? 81 48 08 ? ? ? 40 49", false, 7, true);
-		FreeMemoryAddr = FindPattern("48 85 C9 74 2E 53 48 83 EC 20 48 8B D9");
+		ObjectsAddr = FindPattern(_("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8D 04 D1 EB 03 48 8B ? 81 48 08 ? ? ? 40 49"), false, 7, true);
+		FreeMemoryAddr = FindPattern(_("48 85 C9 74 2E 53 48 83 EC 20 48 8B D9"));
 		bOldObjects = false;
 
 		if (!ObjectsAddr)
-			ObjectsAddr = FindPattern("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8B 04 D1", true, 3);
+			ObjectsAddr = FindPattern(_("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8B 04 D1"), true, 3);
+	}
+
+	if (FN_Version >= 16.00 && FN_Version < 18.40) // 4.26.1
+	{
+		ObjectsAddr = FindPattern(_("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8B 04 D1"), true, 3);
+		FreeMemoryAddr = FindPattern(_("48 85 C9 0F 84 ? ? ? ? 48 89 5C 24 ? 57 48 83 EC 20 48 8B 3D ? ? ? ? 48 8B D9 48"));
 	}
 
 	if (Engine_Version >= 500)
 	{
-		ObjectsAddr = FindPattern("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8B 04 D1", true, 3);
-		ToStringAddr = FindPattern("48 89 5C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 56 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 8B");
-		FreeMemoryAddr = FindPattern("48 85 C9 0F 84 ? ? ? ? 48 89 5C 24 ? 57 48 83 EC 20 48 8B 3D ? ? ? ? 48 8B D9 48");
-		ProcessEventAddr = FindPattern("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 45 33 ED");
+		ObjectsAddr = FindPattern(_("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8B 04 D1"), true, 3);
+		ToStringAddr = FindPattern(_("48 89 5C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 56 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 8B"));
+		FreeMemoryAddr = FindPattern(_("48 85 C9 0F 84 ? ? ? ? 48 89 5C 24 ? 57 48 83 EC 20 48 8B 3D ? ? ? ? 48 8B D9 48"));
+		ProcessEventAddr = FindPattern(_("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 45 33 ED"));
 	}
 
 	if (!ToStringAddr)
 	{
-		MessageBoxA(NULL, "Failed to find FName::ToString", "Fortnite", MB_OK);
+		MessageBoxA(NULL, _("Failed to find FName::ToString"), _("Scripter"), MB_OK);
 		return false;
 	}
 
@@ -750,7 +758,7 @@ bool Setup() // TODO: Add Realloc
 
 	if (!ProcessEventAddr)
 	{
-		MessageBoxA(NULL, "Failed to find UObject::ProcessEvent", "Fortnite", MB_OK);
+		MessageBoxA(NULL, _("Failed to find UObject::ProcessEvent"), _("Scripter"), MB_OK);
 		return false;
 	}
 
@@ -758,7 +766,7 @@ bool Setup() // TODO: Add Realloc
 
 	if (!FreeMemoryAddr)
 	{
-		MessageBoxA(NULL, "Failed to find FMemory::Free", "Fortnite", MB_OK);
+		MessageBoxA(NULL, _("Failed to find FMemory::Free"), _("Scripter"), MB_OK);
 		return false;
 	}
 
@@ -766,7 +774,7 @@ bool Setup() // TODO: Add Realloc
 
 	if (!ObjectsAddr)
 	{
-		MessageBoxA(NULL, "Failed to find FUObjectArray::ObjObjects", "Fortnite", MB_OK);
+		MessageBoxA(NULL, _("Failed to find FUObjectArray::ObjObjects"), _("Scripter"), MB_OK);
 		return false;
 	}
 

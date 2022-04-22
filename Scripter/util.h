@@ -16,39 +16,39 @@ bool Inject(const std::string& DLLName) // TODO: Remake // skidded go brr https:
 	char dll_path[MAX_PATH];
 	
 	if (!GetFullPathNameA(DLLName.c_str(), MAX_PATH, dll_path, nullptr)) {
-		MessageBoxA(0, "Failed to get full path of DLL!", "GetFullPathName", MB_ICONERROR);
+		MessageBoxA(0, _("Failed to get full path of DLL!"), _("GetFullPathName"), MB_ICONERROR);
 		return false;
 	}
 	
 	auto ProcID = GetCurrentProcessId();
 	
 	if (!ProcID) {
-		MessageBoxA(0, "Failed to get process id!", "GetProcessID", MB_ICONERROR);
+		MessageBoxA(0, _("Failed to get process id!"), _("GetProcessID"), MB_ICONERROR);
 		return false;
 	}
 
 	HANDLE h_process = OpenProcess(PROCESS_ALL_ACCESS, NULL, ProcID);
 	
 	if (!h_process) {
-		MessageBoxA(0, "Failed to open a handle to process!", "OpenProcess", MB_ICONERROR);
+		MessageBoxA(0, _("Failed to open a handle to process!"), _("OpenProcess"), MB_ICONERROR);
 		return false;
 	}
 	
 	void* allocated_memory = VirtualAllocEx(h_process, nullptr, MAX_PATH, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	
 	if (!allocated_memory) {
-		MessageBoxA(0, "Failed to allocate memory!", "AllocateMemory", MB_ICONERROR);
+		MessageBoxA(0, _("Failed to allocate memory!"), _("AllocateMemory"), MB_ICONERROR);
 		return false;
 	}
 
 	if (!WriteProcessMemory(h_process, allocated_memory, dll_path, MAX_PATH, nullptr)) {
-		MessageBoxA(0, "Failed to write to process memory!", "WriteProcessMemory", MB_ICONERROR);
+		MessageBoxA(0, _("Failed to write to process memory!"), _("WriteProcessMemory"), MB_ICONERROR);
 		return false;
 	}
 
 	HANDLE h_thread = CreateRemoteThread(h_process, nullptr, NULL, LPTHREAD_START_ROUTINE(LoadLibraryA), allocated_memory, NULL, nullptr);
 	if (!h_thread) {
-		MessageBoxA(0, "Failed to create remote thread!", "CreateRemoteThread", MB_ICONERROR);
+		MessageBoxA(0, _("Failed to create remote thread!"), _("CreateRemoteThread"), MB_ICONERROR);
 		return false;
 	}
 
@@ -72,7 +72,7 @@ bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Manag
 
 	if (FAILED(hr))
 	{
-		MessageBoxA(0, "Failed.\n", "CLRCreateInstance", MB_ICONERROR);
+		MessageBoxA(0, _("Failed.\n"), _("CLRCreateInstance"), MB_ICONERROR);
 
 		return 0;
 	}
@@ -84,7 +84,7 @@ bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Manag
 
 	if (FAILED(hr))
 	{
-		MessageBoxA(0, "Failed.", "GetRuntime", MB_ICONERROR);
+		MessageBoxA(0, _("Failed."), _("GetRuntime"), MB_ICONERROR);
 
 		lpMetaHost->Release();
 
@@ -96,7 +96,7 @@ bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Manag
 
 	if (FAILED(hr) || !fLoadable)
 	{
-		MessageBoxA(0, "Failed.", "IsLoadable", MB_ICONERROR);
+		MessageBoxA(0, _("Failed."), _("IsLoadable"), MB_ICONERROR);
 
 		lpRuntimeInfo->Release();
 		lpMetaHost->Release();
@@ -111,7 +111,7 @@ bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Manag
 
 	if (FAILED(hr))
 	{
-		MessageBoxA(0, "Failed.", "GetInterface", MB_ICONERROR);
+		MessageBoxA(0, _("Failed."), _("GetInterface"), MB_ICONERROR);
 
 		lpRuntimeInfo->Release();
 		lpMetaHost->Release();
@@ -123,7 +123,7 @@ bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Manag
 
 	if (FAILED(hr))
 	{
-		MessageBoxA(0, std::string("Failed " + std::to_string(hr) + '.').c_str(), "CLRStart", MB_ICONERROR);
+		MessageBoxA(0, std::string(_("Failed ") + std::to_string(hr) + _(".")).c_str(), _("CLRStart"), MB_ICONERROR);
 
 		lpRuntimeHost->Release();
 		lpRuntimeInfo->Release();
@@ -144,7 +144,7 @@ bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Manag
 
 	if (FAILED(hr))
 	{
-		MessageBoxA(0, std::format("Failed to load {} with error code {}.", std::string(DLLName.begin(), DLLName.end()), std::to_string(hr) + '.').c_str(), "ExecuteInDefaultAppDomain", MB_ICONERROR);
+		MessageBoxA(0, std::format(_("Failed to load {} with error code {}."), std::string(DLLName.begin(), DLLName.end()), std::to_string(hr) + '.').c_str(), _("ExecuteInDefaultAppDomain"), MB_ICONERROR);
 
 		lpRuntimeHost->Stop();
 		lpRuntimeHost->Release();
@@ -165,8 +165,8 @@ namespace AppData
 	{
 		char* buf{};
 		size_t size = MAX_PATH;
-		_dupenv_s(&buf, &size, "LOCALAPPDATA");
-		Path = fs::path(buf) / "Scripts";
+		_dupenv_s(&buf, &size, _("LOCALAPPDATA"));
+		Path = fs::path(buf) / _("Scripts");
 
 		bool res = true;
 
@@ -189,13 +189,13 @@ Languages ConvertLanguage(std::string Lang)
 {
 	std::transform(Lang.begin(), Lang.end(), Lang.begin(), ::tolower);
 
-	if (Lang == "c#" || Lang == "csharp" || Lang == "c sharp" || Lang == "cs")
+	if (Lang == _("c#") || Lang == _("csharp") || Lang == _("c sharp") || Lang == _("cs"))
 		return Languages::CSharp;
 
-	else if (Lang == "cpp" || Lang == "c++" || Lang == "c plus plus")
+	else if (Lang == _("cpp") || Lang == _("c++") || Lang == _("c plus plus"))
 		return Languages::CPP;
 
-	else if (Lang == "js" || Lang == "javascript" || Lang == "java script" || Lang == "nodejs")
+	else if (Lang == _("js") || Lang == _("javascript") || Lang == _("java script") || Lang == _("nodejs"))
 		return Languages::JS;
 
 	return Languages::UNKNOWN;

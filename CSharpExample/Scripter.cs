@@ -35,7 +35,7 @@ namespace Scripter
     {
 
         public static bool bHasInitialized = false; // This is so the dll doesn't inject twice.
-        public const string ScripterDLL = @"Scripter.dll";
+        public const string ScripterDLL = @"Scripter.dll"; // The dll is already injected so it will find it, it doesn't matter the path.
 
         [StructLayout(LayoutKind.Sequential)]
         public struct FName
