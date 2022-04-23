@@ -58,7 +58,7 @@ bool Inject(const std::string& DLLName) // TODO: Remake // skidded go brr https:
 	return true;
 }
 
-bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Managed-code-injection/blob/master/Bootstrap/DllMain.cpp // TODO: Return error string instead.
+bool ExecuteCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Managed-code-injection/blob/master/Bootstrap/DllMain.cpp // TODO: Return error string instead.
 {
 	ICLRRuntimeHost* lpRuntimeHost = NULL;
 	ICLRRuntimeInfo* lpRuntimeInfo = NULL;
@@ -155,6 +155,11 @@ bool InjectCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Manag
 	}
 	
 	return true;
+}
+
+void ExecuteJS(const std::string& Path)
+{
+	
 }
 
 namespace AppData

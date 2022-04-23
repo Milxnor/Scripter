@@ -47,14 +47,14 @@ namespace Scripter
                     switch (lang)
                     {
                     case CSharp:
-                        InjectCSharp(dll_path.generic_wstring());
+                        ExecuteCSharp(dll_path.generic_wstring());
                         AmountOfInjects++;
                         break;
                     case CPP:
                         Inject(dll_path.generic_string());
                         AmountOfInjects++;
                     case JS:
-                        Inject(dll_path.generic_string());
+                        ExecuteJS(dll_path.generic_string());
                         AmountOfInjects++;
                         break;
                     default:

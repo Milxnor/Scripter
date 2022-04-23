@@ -1,0 +1,13 @@
+{
+  "name": "node-jsexample",
+  "version": "0.0.0",
+  "description": "NodeJSExample",
+  "main": "app.js",
+  "author": {
+    "name": ""
+  },
+
+  "bin": {
+    "execute": "app.js"
+  }
+}
