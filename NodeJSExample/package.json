@@ -6,8 +6,11 @@
   "author": {
     "name": ""
   },
-
   "bin": {
     "execute": "app.js"
+  },
+  "dependencies": {
+    "ffi-napi": "^4.0.3",
+    "node-int64": "^0.4.0"
   }
 }
