@@ -1,16 +1,1 @@
-const ffi = require("ffi-napi")
-const int64 = require('node-int64')
-
-function TEXT(text) { // Convert JSString to CString
-    return Buffer.from('${text}\0', "ucs2");
-}
-
-const Scripter = new ffi.Library("Scripter.dll", {
-    "FindObject": [
-        "int64", ["string"]
-    ]
-});
-
-console.log("Dababy")
-
-console.log(Scripter.FindObject(TEXT("FortEngine_")));
+cout("Hello from NodeJS!");

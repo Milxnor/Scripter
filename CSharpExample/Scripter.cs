@@ -8,35 +8,26 @@ using System.Threading.Tasks;
 
 namespace Scripter
 {
-    unsafe class Windows
+    class Config
     {
-        public const UInt32 StdOutputHandle = 0xFFFFFFF5;
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr GetStdHandle(UInt32 nStdHandle);
-        [DllImport("kernel32.dll")]
-        public static extern void SetStdHandle(UInt32 nStdHandle, IntPtr handle);
-        [DllImport("kernel32")]
-        public static extern bool AllocConsole();
+        public const string ScripterDLL = @"Scripter.dll"; // The dll is already injected so it will find it, it doesn't matter the path.
+        public const string ScriptName = "CSharpExample";
+    }
 
-        static internal void CreateConsole()
+    unsafe class Logger
+    {
+        [DllImport(Config.ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
+        public static extern sbyte* cout(string name, string msg);
+        public static void Log(string msg)
         {
-            Windows.AllocConsole();
-
-            var defaultStdout = new IntPtr(7);
-
-            if (Windows.GetStdHandle(Windows.StdOutputHandle) != defaultStdout)
-                Windows.SetStdHandle(Windows.StdOutputHandle, defaultStdout);
-
-            TextWriter writer = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
-            Console.SetOut(writer);
+            cout(Config.ScriptName, msg);
         }
     }
     unsafe class Main
     {
 
         public static bool bHasInitialized = false; // This is so the dll doesn't inject twice.
-        public const string ScripterDLL = @"Scripter.dll"; // The dll is already injected so it will find it, it doesn't matter the path.
-
+        
         [StructLayout(LayoutKind.Sequential)]
         public struct FName
         {
@@ -44,13 +35,13 @@ namespace Scripter
             uint Number;
         }
         
-        [DllImport(ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(Config.ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
         public static extern sbyte* GetFullName(UObject* obj);
 
-        [DllImport(ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(Config.ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
         public static extern IntPtr Member(UObject* Object, string MemberName);
 
-        [DllImport(ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(Config.ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
         public static extern void ProcessEvent(UObject* Object, UObject* Function, IntPtr Params);
 
         // TODO: Add TArray
@@ -92,7 +83,7 @@ namespace Scripter
             }
         }
 
-        [DllImport(ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(Config.ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
         public static extern UObject* FindObject(string name);
 
         public static int Startup(string args) // This gets called whenever the dll is loaded.

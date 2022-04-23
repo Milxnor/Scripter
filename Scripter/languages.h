@@ -1,6 +1,7 @@
 #pragma once
 
 #include <UE/structs.h>
+#include <duktape/duktape.h>
 
 //  https://youtu.be/o-ass4mkdiA
 
@@ -32,4 +33,29 @@ extern "C" {
 		// if (Object && Function)
 		Object->ProcessEvent(Function, Params);
 	}
+	
+	DLL_EXPORT void cout(const char* str)
+	{
+		std::cout << str << '\n';
+	}
+}
+
+static bool bHasDuktapeInitialized = false;
+
+static duk_ret_t cout(duk_context* ctx) {
+	std::cout << duk_to_string(ctx, 0) << '\n';
+	return 0;  /* no return value (= undefined) */
+}
+
+duk_context* ctx;
+
+void initDuktape()
+{
+	if (bHasDuktapeInitialized)
+		return;
+
+	ctx = duk_create_heap_default();
+	
+	duk_push_c_function(ctx, cout, 1 /*nargs*/);
+	duk_put_global_string(ctx, "cout");
 }

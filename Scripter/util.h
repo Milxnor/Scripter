@@ -157,9 +157,17 @@ bool ExecuteCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Mana
 	return true;
 }
 
-void ExecuteJS(const std::string& Path)
+bool ExecuteJS(const std::string& Path)
 {
+	initDuktape();
+
+	std::ifstream input_file(Path);
 	
+	if (!input_file.is_open()) return false;
+
+	duk_eval_string_noresult(ctx, std::string((std::istreambuf_iterator<char>(input_file)), std::istreambuf_iterator<char>()).c_str());
+
+	return true;
 }
 
 namespace AppData

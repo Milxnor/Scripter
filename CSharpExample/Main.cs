@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Scripter;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -46,7 +47,7 @@ namespace Example
 
         public static int Main(String args)
         {   
-            Console.WriteLine("C#: " + FindObject("FortEngine_")->GetFullName());
+            Logger.Log("C#: " + FindObject("FortEngine_")->GetFullName());
             
             // CreateConsole();
 
