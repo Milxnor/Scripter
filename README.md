@@ -9,7 +9,8 @@ Supports s1-s16 (should work on latest but idk).
 - Add GoLang using cgo (https://stackoverflow.com/questions/8231618/how-to-import-a-dll-function-written-in-c-using-go).<br>
 - Figure out how to add rust. The issue is that it can only call C.<br>
 - Make deleting easier/automatic.<br>
-- Add authors to script.json
+- Add authors to script.json<br>
+- Add more directory/file checking (if it exists).
 
 # FIX SOON
 
