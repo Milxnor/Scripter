@@ -12,3 +12,7 @@ A dll that allows you to easily mod Fortnite in popular coding languages.
 # FIX SOON
 
 - Fix NodeJS crashing
+
+# Gitbook (tutorial)
+
+https://milxnor.gitbook.io/scripter/
