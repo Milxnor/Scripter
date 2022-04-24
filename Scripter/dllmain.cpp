@@ -54,8 +54,9 @@ namespace Scripter
                         Inject(dll_path.generic_string());
                         AmountOfInjects++;
                     case JS:
-                        ExecuteJS(dll_path.generic_string());
-                        AmountOfInjects++;
+                        // ExecuteJS(dll_path.generic_string());
+                        std::cout << _("JS crashes. Fix soon\n");
+                        // AmountOfInjects++;
                         break;
                     default:
                         std::cout << _("Could not deduce language!\n");

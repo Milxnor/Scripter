@@ -91,8 +91,6 @@ namespace Scripter
             if (bHasInitialized)
                 return 0;
 
-            // Windows.CreateConsole();
-
             // Put your startup code here.
 
             // mine is:

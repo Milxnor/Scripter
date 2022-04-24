@@ -58,4 +58,6 @@ void initDuktape()
 	
 	duk_push_c_function(ctx, cout, 1 /*nargs*/);
 	duk_put_global_string(ctx, "cout");
+
+	bHasDuktapeInitialized = true;
 }
