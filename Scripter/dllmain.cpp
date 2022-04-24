@@ -44,6 +44,8 @@ namespace Scripter
 
                     auto dll_path = path / scriptName;
 
+                    std::cout << "DLL: " << dll_path << " Language: " << lang << '\n';
+
                     switch (lang)
                     {
                     case CSharp:
@@ -53,10 +55,10 @@ namespace Scripter
                     case CPP:
                         Inject(dll_path.generic_string());
                         AmountOfInjects++;
+                        break;
                     case JS:
-                        // ExecuteJS(dll_path.generic_string());
-                        std::cout << _("JS crashes. Fix soon\n");
-                        // AmountOfInjects++;
+                        ExecuteJS(dll_path.generic_string());
+                        AmountOfInjects++;
                         break;
                     default:
                         std::cout << _("Could not deduce language!\n");
@@ -70,7 +72,7 @@ namespace Scripter
         return AmountOfInjects;
     }
 	
-    int Init()
+    int Init() // This extracts the zips. If there is ever a launcher, this will not be needed.
     {
         for (const auto& entry : fs::directory_iterator(fs::current_path() / _("Scripts")))
         {
@@ -78,8 +80,8 @@ namespace Scripter
 
             if (!path.filename().generic_string().contains(_(".script")))
             {
-				MessageBoxA(0, _("Scripts folder contains files that are not scripts!\n"), _("Error"), MB_OK);
-				return 0;
+                std::cout << "Path " << path << " is not a valid path!\n";
+				// return 0;
 			}
 
             if (!fs::exists(path))
@@ -88,7 +90,7 @@ namespace Scripter
                 return 0;
             }
 
-            auto tempPath = fs::temp_directory_path() / _("ScriptsExtracted"); // + std::to_string(rand() % 100));
+            auto tempPath = fs::temp_directory_path() / _("ScriptsExtracted"); // + std::to_string(rand() % 100)); // TODO: Remove
 
             if (fs::exists(tempPath))
                 fs::remove_all(tempPath);
@@ -100,7 +102,7 @@ namespace Scripter
             }
 			
             miniz_cpp::zip_file file(path.generic_string());
-            // file.printdir();
+            
             file.extractall(tempPath.generic_string());
 
             // Read and parse script.json
@@ -112,24 +114,36 @@ namespace Scripter
                 MessageBoxA(0, _("Could not find script.json!"), _("Error"), MB_ICONERROR);
                 return 0;
             }
-
+            			
             if (!fs::exists(AppData::Path))
-                fs::create_directory(AppData::Path);
-
+            {
+                if (!fs::create_directory(AppData::Path));
+                {
+                    MessageBoxA(0, _("Unable to create AppData folder!"), _("Scripter"), MB_ICONERROR);
+                    return 0;
+                }
+            }
+            
             std::ifstream data(scriptPath);
 
             json j = json::parse(data);
 
             data.close();
 
-            // fs::rename(tempPath, Settings::Path / j[_("script_name")]);
+            auto language = ConvertLanguage(j[_("language")]);
 			
-            auto newPath = AppData::Path / j[_("script_name")];
+            auto newPathStr = (AppData::Path / AddExtension(j[_("script_name")], language)).generic_string();
+			
+            newPathStr.erase(newPathStr.find_last_of('.'), 50); // Remove the file extension.
+
+            std::cout << newPathStr << '\n';
+
+            auto newPath = fs::path(newPathStr);
 
             if (fs::exists(newPath))
                 fs::remove_all(newPath);
 
-            fs::copy(tempPath, AppData::Path / j[_("script_name")]);
+            fs::copy(tempPath, newPathStr);
 
             if (fs::exists(tempPath))
                 fs::remove_all(tempPath);
@@ -162,12 +176,12 @@ DWORD WINAPI Main(LPVOID)
 
     auto AmountOfScripts = Scripter::Init();
 
-    if (!AmountOfScripts)
+    if (AmountOfScripts == 0)
     {
 		MessageBoxA(0, _("Could not inject any scripts!"), _("Scripter::Init"), MB_OK);
 		return 0;
     }
-
+	
     std::cout << _("\nInitialized ") << AmountOfScripts << _(" Scripts!\n");
 }
 

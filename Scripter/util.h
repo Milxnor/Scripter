@@ -60,9 +60,9 @@ bool Inject(const std::string& DLLName) // TODO: Remake // skidded go brr https:
 
 bool ExecuteCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Managed-code-injection/blob/master/Bootstrap/DllMain.cpp // TODO: Return error string instead.
 {
-	ICLRRuntimeHost* lpRuntimeHost = NULL;
-	ICLRRuntimeInfo* lpRuntimeInfo = NULL;
-	ICLRMetaHost* lpMetaHost = NULL;
+	ICLRRuntimeHost* lpRuntimeHost = nullptr;
+	ICLRRuntimeInfo* lpRuntimeInfo = nullptr;
+	ICLRMetaHost* lpMetaHost = nullptr;
 	
 	HRESULT hr = CLRCreateInstance(
 		CLSID_CLRMetaHost,
@@ -165,7 +165,9 @@ bool ExecuteJS(const std::string& Path)
 	
 	if (!input_file.is_open()) return false;
 
-	duk_eval_string_noresult(ctx, std::string((std::istreambuf_iterator<char>(input_file)), std::istreambuf_iterator<char>()).c_str());
+	auto code = std::string((std::istreambuf_iterator<char>(input_file)), std::istreambuf_iterator<char>()).c_str();
+
+	duk_eval_string_noresult(ctx, code);
 
 	return true;
 }
@@ -180,7 +182,7 @@ namespace AppData
 		size_t size = MAX_PATH;
 		_dupenv_s(&buf, &size, _("LOCALAPPDATA"));
 		Path = fs::path(buf) / _("Scripts");
-
+		
 		bool res = true;
 
 		if (!fs::exists(Path))
@@ -212,4 +214,19 @@ Languages ConvertLanguage(std::string Lang)
 		return Languages::JS;
 
 	return Languages::UNKNOWN;
+}
+
+std::string AddExtension(const std::string& Path, Languages lang)
+{	
+	switch (lang)
+	{
+	case Languages::CSharp:
+		return Path + ".dll";
+	case Languages::CPP:
+		return Path + ".dll";
+	case Languages::JS:
+		return Path + ".js";
+	default:
+		return Path;
+	}
 }
