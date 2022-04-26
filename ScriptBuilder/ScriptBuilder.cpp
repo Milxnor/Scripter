@@ -43,24 +43,24 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 	}
 
 	std::string dllpathstr;
-	std::cout << "Enter dll path: ";
+	std::cout << _("Enter dll path: ");
 	std::getline(std::cin, dllpathstr);
 
 	auto DllPath = fs::path(dllpathstr);
 
 	if (!fs::exists(DllPath))
 	{
-		std::cout << "Could not find path!\n";
+		std::cout << _("Could not find path!\n");
 		Sleep(2500);
 		std::exit(0);
 	}
 
 	auto name = DllPath.filename().generic_string();
 
-	if (fs::exists("script.json"))
-		fs::remove("script.json");
+	if (fs::exists(_("script.json")))
+		fs::remove(_("script.json"));
 
-	if (fs::exists(name))
+	if (fs::exists(name) && name != DllPath)
 		fs::remove(name);
 
 	if (!name.contains(".dll") && !name.contains(".js"))
@@ -71,25 +71,25 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 	}
 
 	std::string ScriptName;
-	std::cout << "Enter script name: ";
+	std::cout << _("Enter script name: ");
 	std::getline(std::cin, ScriptName);
 
 	std::string language;
-	std::cout << "Enter language: ";
+	std::cout << _("Enter language: ");
 	std::getline(std::cin, language);
 
 	std::string description;
-	std::cout << "Enter description: ";
+	std::cout << _("Enter description: ");
 	std::getline(std::cin, description);
 
 	ordered_json j;
-	j["script_name"] = ScriptName;
-	j["language"] = language;
-	j["description"] = description; 
+	j[_("script_name")] = ScriptName;
+	j[_("language")] = language;
+	j[_("description")] = description; 
 
 	name = ScriptName;
 	
-	std::ofstream stream("script.json");
+	std::ofstream stream(_("script.json"));
 
 	stream << j.dump(4);
 
@@ -103,20 +103,35 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 
 	auto lang = ConvertLanguage(j[_("language")]);
 
+	std::string nameWithExtension;
+	
 	switch (lang)
 	{
 	case CSharp:
-		file.write(name + ".dll");
+		nameWithExtension = name + _(".dll");
 		break;
 	case CPP:
-		file.write(name + ".dll");
+		nameWithExtension = name + _(".dll");
 		break;
 	case JS:
-		file.write(name + ".js");
+		nameWithExtension = name + _(".js");
+		break;
+	}
+
+	switch (lang)
+	{
+	case CSharp:
+		file.write(nameWithExtension);
+		break;
+	case CPP:
+		file.write(nameWithExtension);
+		break;
+	case JS:
+		file.write(nameWithExtension);
 		break;
 	}
 	
-	file.write("script.json");
+	file.write(_("script.json"));
 
 	auto postoremove = name.find_last_of('.');
 
@@ -130,13 +145,13 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 
 	file.save(script);
 
-	std::cout << "Saved to " + fs::absolute(script).generic_string() << ".\n";
+	std::cout << _("Saved to ") + fs::absolute(script).generic_string() << ".\n";
 
-	if (fs::exists("script.json"))
-		fs::remove("script.json");
+	if (fs::exists(_("script.json")))
+		fs::remove(_("script.json"));
 
-	if (fs::exists(name))
-		fs::remove(name);
+	if (fs::exists(nameWithExtension))
+		fs::remove(nameWithExtension);
 
 	std::cin.get();
 }

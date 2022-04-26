@@ -23,6 +23,8 @@ extern "C"
 		void* Member(UObject* Object, const char* MemberName);
 
 		void ProcessEvent(UObject* Object, UObject* Function, void* Params);
+
+		void ProcessEventStr(UObject* Object, const char* FuncName, void* Params);
 	}
 }
 
@@ -51,6 +53,11 @@ struct UObject
 	auto ProcessEvent(auto Fn, void* Params)
 	{
 		Imports::ProcessEvent(this, Fn, nullptr);
+	}
+
+	auto ProcessEvent(const std::string& FuncName, void* Params)
+	{
+		return Imports::ProcessEventStr(this, FuncName.c_str(), Params);
 	}
 };
 

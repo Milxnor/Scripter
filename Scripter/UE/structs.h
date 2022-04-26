@@ -8,17 +8,18 @@
 #include <chrono>
 #include <thread>
 #include <vector>
-#include <regex>
-#include <xorstr.hpp>
+#include <iterator>
 
 #include "enums.h"
+#include <regex>
+#include "xorstr.hpp"
 
 using namespace std::chrono;
 
 #define INL __forceinline
 
 static inline void (*ToStringO)(struct FName*, class FString&);
-static inline void (*ProcessEventO)(void*, void*, void*);
+static inline void* (*ProcessEventO)(void*, void*, void*);
 
 enum
 {
@@ -80,6 +81,11 @@ template<class TEnum>
 struct TEnumAsByte // https://github.com/EpicGames/UnrealEngine/blob/4.21/Engine/Source/Runtime/Core/Public/Containers/EnumAsByte.h#L18
 {
 	uint8_t Value;
+
+	auto Get()
+	{
+		return Value;
+	}
 };
 
 template <class ElementType>
@@ -94,7 +100,7 @@ public:
 	void Free()
 	{
 		if (!FMemory::Free)
-			MessageBoxA(0, _("No FMemory::Free!"), _("Scripter"), MB_ICONERROR);
+			MessageBoxA(0, _("No FMemory::Free!"), _("Fortnite"), MB_ICONERROR);
 		// VirtualFree(Data, 0, MEM_RELEASE);
 		else
 			FMemory::Free(Data);
@@ -118,7 +124,7 @@ public:
 	{
 		if (!FMemory::Realloc)
 		{
-			MessageBoxA(0, _("How are you expecting to reserve with no Realloc?"), _("Scripter"), MB_ICONERROR);
+			MessageBoxA(0, _("How are you expecting to reserve with no Realloc?"), _("Fortnite"), MB_ICONERROR);
 			return;
 		}
 
@@ -230,11 +236,22 @@ struct UObject // https://github.com/EpicGames/UnrealEngine/blob/c3caf7b6bf12ae4
 	template <typename MemberType>
 	INL MemberType* Member(std::string MemberName);
 
-	INL void ProcessEvent(UObject* Function, void* Params)
+	bool IsA(UObject* cmp) const;
+
+	INL struct UFunction* Function(const std::string& FuncName);
+
+	INL auto ProcessEvent(UObject* Function, void* Params)
 	{
 		return ProcessEventO(this, Function, Params);
 	}
+
+	INL auto ProcessEvent(const std::string& FuncName, void* Params)
+	{
+		return ProcessEvent((UObject*)this->Function(FuncName), Params);
+	}
 };
+
+struct UFunction : UObject {}; // TODO: Add acutal stuff to this
 
 struct FUObjectItem // https://github.com/EpicGames/UnrealEngine/blob/4.27/Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectArray.h#L26
 {
@@ -262,6 +279,9 @@ struct FFixedUObjectArray
 		return Objects[Index].Object;
 	}
 };
+
+static struct FChunkedFixedUObjectArray* ObjObjects;
+static FFixedUObjectArray* OldObjects;
 
 struct FChunkedFixedUObjectArray // https://github.com/EpicGames/UnrealEngine/blob/7acbae1c8d1736bb5a0da4f6ed21ccb237bc8851/Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectArray.h#L321
 {
@@ -296,19 +316,43 @@ struct FChunkedFixedUObjectArray // https://github.com/EpicGames/UnrealEngine/bl
 
 		return obj;
 	}
+
+	struct Iterator
+	{
+		using iterator_category = std::forward_iterator_tag;
+		using difference_type = std::ptrdiff_t;
+		using value_type = UObject;
+		using pointer = UObject*;
+		using reference = UObject&;
+
+		Iterator(pointer ptr) : m_ptr(ptr) {}
+
+		reference operator*() const { return *m_ptr; }
+		pointer operator->() { return m_ptr; }
+		Iterator& operator++() { m_ptr = ObjObjects->GetObjectById(m_ptr->InternalIndex + 1); return *this; }
+		Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
+		friend bool operator== (const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; };
+		friend bool operator!= (const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; };
+
+	private:
+		pointer m_ptr;
+	};
+
+	Iterator begin() { return Iterator(GetObjectById(0)); }
+	Iterator end() { return Iterator(GetObjectById(NumElements)); }
 };
 
-static FChunkedFixedUObjectArray* ObjObjects;
-static FFixedUObjectArray* OldObjects;
+#define OBJECTLOOP int32_t i = 0; i < (ObjObjects ? ObjObjects->Num() : OldObjects->Num()); i++
 
 template <typename ReturnType = UObject>
 static ReturnType* FindObject(const std::string& str, bool bIsEqual = false, bool bIsName = false)
 {
 	if (bIsName) bIsEqual = true;
 
-	for (int32_t i = 0; i < (ObjObjects ? ObjObjects->Num() : OldObjects->Num()); i++)
+	for (OBJECTLOOP)
+		// for (auto Object = ObjObjects->begin().currentObject; Object != ObjObjects->end().currentObject; Object = ObjObjects->GetObjectById(Object->InternalIndex + 1))
+		// for (auto Object : ObjObjects)
 	{
-
 		auto Object = ObjObjects ? ObjObjects->GetObjectById(i) : OldObjects->GetObjectById(i);
 
 		auto ObjectName = bIsName ? Object->GetName() : Object->GetFullName(); // bool ? true : false
@@ -339,6 +383,18 @@ struct UFieldNewProps : UObject
 	void* pad_01;
 	void* pad_02;
 };
+
+struct UStructFTT : UField
+{
+	void* Pad;
+	void* Pad2;
+	UStructFTT* SuperStruct; // 0x30
+	UField* ChildProperties; // 0x38
+	uint32_t PropertiesSize; // 0x40
+	char pad_44[0x88 - 0x30 - 0x14];
+};
+
+struct UClassFTT : UStructFTT {};
 
 struct UProperty : UField
 {
@@ -391,54 +447,6 @@ struct FField
 		return Name.ToString();
 	}
 };
-
-struct FFieldNew
-{
-	void** VFT;
-	void* ClassPrivate;
-	void* Owner;
-	// void* pad;
-	FFieldNew* Next;
-	FName Name;
-	EObjectFlags FlagsPrivate;
-
-	std::string GetName()
-	{
-		return Name.ToString();
-	}
-};
-
-struct FPropertyNew : public FFieldNew
-{
-	int32_t	ArrayDim;
-	int32_t	ElementSize;
-	EPropertyFlags PropertyFlags;
-	uint16_t RepIndex;
-	TEnumAsByte<ELifetimeCondition> BlueprintReplicationCondition;
-	int32_t	Offset_Internal;
-	FName RepNotifyFunc;
-	FPropertyNew* PropertyLinkNext;
-	FPropertyNew* NextRef;
-	FPropertyNew* DestructorLinkNext;
-	FPropertyNew* PostConstructLinkNext;
-};
-
-struct UStructNew : UFieldNewProps
-{
-	UStructNew* SuperStruct;
-	UFieldNewProps* Children;
-	FFieldNew* ChildProperties;
-	int32_t PropertiesSize;
-	int32_t MinAlignment;
-	TArray<uint8_t> Script;
-	FPropertyNew* PropertyLink;
-	FPropertyNew* RefLink;
-	FPropertyNew* DestructorLink;
-	FPropertyNew* PostConstructLink;
-	TArray<UObject*> ScriptAndPropertyObjectReferences;
-};
-
-struct UClassNew : public UStructNew {};
 
 struct FProperty : public FField
 {
@@ -507,10 +515,10 @@ struct UStructOldest : public UField
 
 struct UClassOldest : UStructOldest {};
 
-template <typename ClassType, typename PropertyType>
-int LoopMembersAndFindOffset(UObject* Object, const std::string& MemberName)
+template <typename ClassType, typename PropertyType, typename ReturnValue = PropertyType>
+auto GetMembers(UObject* Object)
 {
-	// We loop through the whole class hierarchy to find the offset.
+	std::vector<ReturnValue*> Members;
 
 	for (auto CurrentClass = (ClassType*)Object->ClassPrivate; CurrentClass; CurrentClass = (ClassType*)CurrentClass->SuperStruct)
 	{
@@ -518,11 +526,65 @@ int LoopMembersAndFindOffset(UObject* Object, const std::string& MemberName)
 
 		while (Property)
 		{
-			if (Property->GetName() == MemberName)
-				return ((PropertyType*)Property)->Offset_Internal;
+			Members.push_back((ReturnValue*)Property);
 
 			Property = Property->Next;
 		}
+	}
+
+	return Members;
+}
+
+auto GetMembersAsObjects(UObject* Object)
+{
+	std::vector<UObject*> Members;
+
+	if (Engine_Version <= 420)
+		Members = GetMembers<UClassOldest, UPropertyOld, UObject>(Object);
+
+	else if (Engine_Version == 421) // && Engine_Version <= 424)
+		Members = GetMembers<UClassOld, UProperty, UObject>(Object);
+
+	else if (Engine_Version >= 422 && Engine_Version <= 424)
+		Members = GetMembers<UClassFTT, UProperty, UObject>(Object);
+
+	else if (Engine_Version >= 425) // && Engine_Version < 500)
+		Members = GetMembers<UClass, FProperty, UObject>(Object);
+
+	return Members;
+}
+
+std::vector<std::string> GetMemberNames(UObject* Object)
+{
+	std::vector<std::string> Names;
+	std::vector<UObject*> Members = GetMembersAsObjects(Object);
+
+	for (auto Member : Members)
+		Names.push_back(Member->GetFullName());
+
+	return Names;
+}
+
+UFunction* FindFunction(const std::string& Name, UObject* Object) // might as well pass in object because what else u gon use a func for.
+{
+	std::vector<UObject*> Members = GetMembersAsObjects(Object);
+
+	for (auto Member : Members)
+	{
+		if (Member->GetName() == Name) // dont use IsA cuz slower
+			return (UFunction*)Member;
+	}
+}
+
+template <typename ClassType, typename PropertyType>
+int LoopMembersAndFindOffset(UObject* Object, const std::string& MemberName)
+{
+	// We loop through the whole class hierarchy to find the offset.
+
+	for (auto Member : GetMembers<ClassType, PropertyType>(Object))
+	{
+		if (Member->GetName() == MemberName)
+			return ((PropertyType*)Member)->Offset_Internal;
 	}
 }
 
@@ -533,14 +595,14 @@ static int GetOffset(UObject* Object, const std::string& MemberName)
 		if (Engine_Version <= 420)
 			return LoopMembersAndFindOffset<UClassOldest, UPropertyOld>(Object, MemberName);
 
-		else if (Engine_Version >= 421 && Engine_Version <= 424)
+		else if (Engine_Version == 421) // && Engine_Version <= 424)
 			return LoopMembersAndFindOffset<UClassOld, UProperty>(Object, MemberName);
 
-		else if (Engine_Version >= 425 && Engine_Version < 500)
-			return LoopMembersAndFindOffset<UClass, FProperty>(Object, MemberName);
+		else if (Engine_Version >= 422 && Engine_Version <= 424)
+			return LoopMembersAndFindOffset<UClassFTT, UProperty>(Object, MemberName);
 
-		else if (Engine_Version >= 500)
-			return LoopMembersAndFindOffset<UClassNew, FPropertyNew>(Object, MemberName);
+		else if (Engine_Version >= 425) // && Engine_Version < 500)
+			return LoopMembersAndFindOffset<UClass, FProperty>(Object, MemberName);
 	}
 
 	return 0;
@@ -616,6 +678,24 @@ static uint64_t FindPattern(const char* signature, bool bRelative = false, uint3
 
 bool Setup() // TODO: Add Realloc
 {
+	uint64_t FreeMemoryAddr = 0;
+
+	FreeMemoryAddr = FindPattern(_("48 85 C9 74 1D 4C 8B 05 ? ? ? ? 4D 85 C0 0F 84 ? ? ? ? 49"));
+
+	if (!FreeMemoryAddr)
+		FreeMemoryAddr = FindPattern(_("48 85 C9 74 2E 53 48 83 EC 20 48 8B D9 48 8B 0D ? ? ? ? 48 85 C9 75 0C E8 ? ? ? ? 48 8B 0D ? ? ? ? 48"));
+
+	if (!FreeMemoryAddr)
+		FreeMemoryAddr = FindPattern(_("48 85 C9 74 2E 53 48 83 EC 20 48 8B D9"));
+
+	if (!FreeMemoryAddr)
+	{
+		MessageBoxA(NULL, _("Failed to find FMemory::Free"), _("Fortnite"), MB_OK);
+		return false;
+	}
+
+	FMemory::Free = decltype(FMemory::Free)(FreeMemoryAddr);
+
 	GetEngineVersion = decltype(GetEngineVersion)(FindPattern(_("40 53 48 83 EC 20 48 8B D9 E8 ? ? ? ? 48 8B C8 41 B8 04 ? ? ? 48 8B D3")));
 
 	std::string FullVersion;
@@ -626,7 +706,7 @@ bool Setup() // TODO: Add Realloc
 
 		if (!VerStr)
 		{
-			MessageBoxA(0, _("Failed to find fortnite version!"), _("Scripter"), MB_ICONERROR);
+			MessageBoxA(0, _("Failed to find fortnite version!"), _("Fortnite"), MB_ICONERROR);
 			return false;
 		}
 
@@ -647,7 +727,7 @@ bool Setup() // TODO: Add Realloc
 			FNVer.erase(0, FNVer.find_last_of(_("-"), FNVer.length() - 1) + 1);
 			EngineVer.erase(EngineVer.find_first_of(_("-"), FNVer.length() - 1), 40);
 
-			if (EngineVer.find_first_of(_(".")) != EngineVer.find_last_of(_("."))) // this is for 4.21.0 and itll remove the .0
+			if (EngineVer.find_first_of(".") != EngineVer.find_last_of(".")) // this is for 4.21.0 and itll remove the .0
 				EngineVer.erase(EngineVer.find_last_of(_(".")), 2);
 
 			Engine_Version = std::stod(EngineVer) * 100;
@@ -677,7 +757,6 @@ bool Setup() // TODO: Add Realloc
 
 	uint64_t ToStringAddr = 0;
 	uint64_t ProcessEventAddr = 0;
-	uint64_t FreeMemoryAddr = 0;
 	uint64_t ObjectsAddr = 0;
 	bool bOldObjects = false;
 
@@ -704,10 +783,6 @@ bool Setup() // TODO: Add Realloc
 		}
 
 		ProcessEventAddr = FindPattern(_("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 48 63 41 0C 45 33 F6"));
-		FreeMemoryAddr = FindPattern(_("48 85 C9 74 1D 4C 8B 05 ? ? ? ? 4D 85 C0 0F 84 ? ? ? ? 49"));
-
-		if (!FreeMemoryAddr)
-			FreeMemoryAddr = FindPattern(_("48 85 C9 74 2E 53 48 83 EC 20 48 8B D9 48 8B 0D ? ? ? ? 48 85 C9 75 0C E8 ? ? ? ? 48 8B 0D ? ? ? ? 48"));
 
 		bOldObjects = true;
 	}
@@ -727,7 +802,6 @@ bool Setup() // TODO: Add Realloc
 	if (Engine_Version >= 421 && Engine_Version <= 426)
 	{
 		ObjectsAddr = FindPattern(_("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8D 04 D1 EB 03 48 8B ? 81 48 08 ? ? ? 40 49"), false, 7, true);
-		FreeMemoryAddr = FindPattern(_("48 85 C9 74 2E 53 48 83 EC 20 48 8B D9"));
 		bOldObjects = false;
 
 		if (!ObjectsAddr)
@@ -737,20 +811,18 @@ bool Setup() // TODO: Add Realloc
 	if (FN_Version >= 16.00 && FN_Version < 18.40) // 4.26.1
 	{
 		ObjectsAddr = FindPattern(_("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8B 04 D1"), true, 3);
-		FreeMemoryAddr = FindPattern(_("48 85 C9 0F 84 ? ? ? ? 48 89 5C 24 ? 57 48 83 EC 20 48 8B 3D ? ? ? ? 48 8B D9 48"));
 	}
 
 	if (Engine_Version >= 500)
 	{
 		ObjectsAddr = FindPattern(_("48 8B 05 ? ? ? ? 48 8B 0C C8 48 8B 04 D1"), true, 3);
 		ToStringAddr = FindPattern(_("48 89 5C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 56 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 8B"));
-		FreeMemoryAddr = FindPattern(_("48 85 C9 0F 84 ? ? ? ? 48 89 5C 24 ? 57 48 83 EC 20 48 8B 3D ? ? ? ? 48 8B D9 48"));
 		ProcessEventAddr = FindPattern(_("40 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8D 6C 24 ? 48 89 9D ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C5 48 89 85 ? ? ? ? 45 33 ED"));
 	}
 
 	if (!ToStringAddr)
 	{
-		MessageBoxA(NULL, _("Failed to find FName::ToString"), _("Scripter"), MB_OK);
+		MessageBoxA(NULL, _("Failed to find FName::ToString"), _("Fortnite"), MB_OK);
 		return false;
 	}
 
@@ -758,23 +830,15 @@ bool Setup() // TODO: Add Realloc
 
 	if (!ProcessEventAddr)
 	{
-		MessageBoxA(NULL, _("Failed to find UObject::ProcessEvent"), _("Scripter"), MB_OK);
+		MessageBoxA(NULL, _("Failed to find UObject::ProcessEvent"), _("Fortnite"), MB_OK);
 		return false;
 	}
 
 	ProcessEventO = decltype(ProcessEventO)(ProcessEventAddr);
 
-	if (!FreeMemoryAddr)
-	{
-		MessageBoxA(NULL, _("Failed to find FMemory::Free"), _("Scripter"), MB_OK);
-		return false;
-	}
-
-	FMemory::Free = decltype(FMemory::Free)(FreeMemoryAddr);
-
 	if (!ObjectsAddr)
 	{
-		MessageBoxA(NULL, _("Failed to find FUObjectArray::ObjObjects"), _("Scripter"), MB_OK);
+		MessageBoxA(NULL, _("Failed to find FUObjectArray::ObjObjects"), _("Fortnite"), MB_OK);
 		return false;
 	}
 
@@ -782,4 +846,38 @@ bool Setup() // TODO: Add Realloc
 		OldObjects = decltype(OldObjects)(ObjectsAddr);
 	else
 		ObjObjects = decltype(ObjObjects)(ObjectsAddr);
+}
+
+template <typename ClassType>
+bool IsA_(const UObject* cmpto, UObject* cmp)
+{
+	for (auto super = (ClassType*)cmpto->ClassPrivate; super; super = (ClassType*)super->SuperStruct)
+	{
+		if (super == cmp)
+			return true;
+	}
+
+	return false;
+}
+
+bool UObject::IsA(UObject* cmp) const
+{
+	if (Engine_Version <= 420)
+		return IsA_<UClassOldest>(this, cmp);
+
+	else if (Engine_Version == 421) // && Engine_Version <= 424)
+		return IsA_<UClassOld>(this, cmp);
+
+	else if (Engine_Version >= 422 && Engine_Version < 425)
+		return IsA_<UClassFTT>(this, cmp);
+
+	else if (Engine_Version >= 425)
+		return IsA_<UClass>(this, cmp);
+
+	return false;
+}
+
+INL UFunction* UObject::Function(const std::string& FuncName)
+{
+	return FindFunction(FuncName, this);
 }

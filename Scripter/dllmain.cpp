@@ -176,7 +176,7 @@ DWORD WINAPI Main(LPVOID)
 
     auto AmountOfScripts = Scripter::Init();
 
-    if (AmountOfScripts == 0)
+    if (AmountOfScripts == 0) // TODO: If one fails, this is 0 for some reason.
     {
 		MessageBoxA(0, _("Could not inject any scripts!"), _("Scripter::Init"), MB_OK);
 		return 0;

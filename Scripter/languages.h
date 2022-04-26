@@ -28,10 +28,15 @@ extern "C" {
 		return Object->Member<void>(MemberName);
 	}
 
-	DLL_EXPORT void ProcessEvent(UObject* Object, UObject* Function, void* Params)
+	DLL_EXPORT auto ProcessEvent(UObject* Object, UObject* Function, void* Params)
 	{
 		// if (Object && Function)
-		Object->ProcessEvent(Function, Params);
+		return Object->ProcessEvent(Function, Params);
+	}
+	
+	DLL_EXPORT auto ProcessEventStr(UObject* Object, const char* FuncName, void* Params)
+	{
+		return Object->ProcessEvent(FuncName, Params);
 	}
 	
 	DLL_EXPORT void cout(const char* str)

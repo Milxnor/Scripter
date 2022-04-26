@@ -16,11 +16,14 @@ namespace Scripter
 
     unsafe class Logger
     {
+        // [DllImport(Config.ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
+        // public static extern void cout(string name, string msg);
         [DllImport(Config.ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
-        public static extern sbyte* cout(string name, string msg);
+        public static extern void cout(string msg);
         public static void Log(string msg)
         {
-            cout(Config.ScriptName, msg);
+            // cout(Config.ScriptName, msg);
+            cout(msg);
         }
     }
     unsafe class Main
@@ -43,7 +46,10 @@ namespace Scripter
 
         [DllImport(Config.ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
         public static extern void ProcessEvent(UObject* Object, UObject* Function, IntPtr Params);
-
+        
+        [DllImport(Config.ScripterDLL, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
+        public static extern void ProcessEventStr(UObject* Object, string Function, IntPtr Params);
+        
         // TODO: Add TArray
 
         [StructLayout(LayoutKind.Sequential)]
@@ -80,6 +86,11 @@ namespace Scripter
             public void ProcessEvent(UObject* Function, IntPtr Params)
             {
                 Main.ProcessEvent(GetPtrToSelf(), Function, Params);
+            }
+
+            public void ProcessEvent(string Function, IntPtr Params)
+            {
+                Main.ProcessEventStr(GetPtrToSelf(), Function, Params);
             }
         }
 

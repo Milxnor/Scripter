@@ -46,8 +46,9 @@ namespace Example
         } 
 
         public static int Main(String args)
-        {   
-            Logger.Log("C#: " + FindObject("FortEngine_")->GetFullName());
+        {
+            // Logger.Log("C#: " + FindObject("FortEngine_")->GetFullName());
+            Logger.Log("Hello from C#!");
             
             // CreateConsole();
 
