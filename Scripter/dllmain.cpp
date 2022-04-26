@@ -44,21 +44,19 @@ namespace Scripter
 
                     auto dll_path = path / scriptName;
 
-                    std::cout << "DLL: " << dll_path << " Language: " << lang << '\n';
-
                     switch (lang)
                     {
                     case CSharp:
                         ExecuteCSharp(dll_path.generic_wstring());
-                        AmountOfInjects++;
+                        ++AmountOfInjects;
                         break;
                     case CPP:
                         Inject(dll_path.generic_string());
-                        AmountOfInjects++;
+                        ++AmountOfInjects;
                         break;
                     case JS:
                         ExecuteJS(dll_path.generic_string());
-                        AmountOfInjects++;
+                        ++AmountOfInjects;
                         break;
                     default:
                         std::cout << _("Could not deduce language!\n");
@@ -136,8 +134,6 @@ namespace Scripter
 			
             newPathStr.erase(newPathStr.find_last_of('.'), 50); // Remove the file extension.
 
-            std::cout << newPathStr << '\n';
-
             auto newPath = fs::path(newPathStr);
 
             if (fs::exists(newPath))
@@ -176,7 +172,7 @@ DWORD WINAPI Main(LPVOID)
 
     auto AmountOfScripts = Scripter::Init();
 
-    if (AmountOfScripts == 0) // TODO: If one fails, this is 0 for some reason.
+    if (!AmountOfScripts) // TODO: If one fails, this is 0 for some reason.
     {
 		MessageBoxA(0, _("Could not inject any scripts!"), _("Scripter::Init"), MB_OK);
 		return 0;

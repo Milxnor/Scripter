@@ -93,11 +93,14 @@ void initDuktape()
 
 	ctx = duk_create_heap_default();
 	
-	duk_push_c_function(ctx, cout, 1 /*nargs*/);
+	duk_push_c_function(ctx, cout, 1 /*number of args*/);
 	duk_put_global_string(ctx, "cout");
 
-	duk_push_c_function(ctx, cout, 1 /*nargs*/);
-	duk_put_global_string(ctx, "cout");
+	duk_push_c_function(ctx, FindObject, 1);
+	duk_put_global_string(ctx, "FindObject");
+	
+	duk_push_c_function(ctx, GetFullName, 1);
+	duk_put_global_string(ctx, "GetFullName");
 
 	bHasDuktapeInitialized = true;
 }
