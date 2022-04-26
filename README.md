@@ -2,6 +2,10 @@
 A dll that allows you to easily mod Fortnite in popular coding languages.<br>
 Supports s1-s16 (should work on latest but idk).
 
+# Supported languages
+
+C#, JS, C++
+
 # TODO
 
 - Add checks to make sure the user has the language the script is made in.<br>
