@@ -52,6 +52,21 @@ static duk_ret_t cout(duk_context* ctx) {
 	return 0;  /* no return value (= undefined) */
 }
 
+static duk_ret_t FindObject(duk_context* ctx) {
+	auto objName = duk_to_string(ctx, 0);
+	auto obj = FindObject(duk_to_string(ctx, 0));
+	
+	if (!obj)
+	{
+		std::cout << "Object not found: " << objName << '\n';
+		return 0;
+	}
+	
+	duk_push_pointer(ctx, obj);
+	
+	return 1;  
+}
+
 duk_context* ctx;
 
 void initDuktape()
@@ -61,6 +76,9 @@ void initDuktape()
 
 	ctx = duk_create_heap_default();
 	
+	duk_push_c_function(ctx, cout, 1 /*nargs*/);
+	duk_put_global_string(ctx, "cout");
+
 	duk_push_c_function(ctx, cout, 1 /*nargs*/);
 	duk_put_global_string(ctx, "cout");
 
