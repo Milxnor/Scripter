@@ -47,24 +47,41 @@ extern "C" {
 
 static bool bHasDuktapeInitialized = false;
 
-static duk_ret_t cout(duk_context* ctx) {
+static duk_ret_t cout(duk_context* ctx)
+{
 	std::cout << duk_to_string(ctx, 0) << '\n';
 	return 0;  /* no return value (= undefined) */
 }
 
-static duk_ret_t FindObject(duk_context* ctx) {
+static duk_ret_t FindObject(duk_context* ctx) 
+{
 	auto objName = duk_to_string(ctx, 0);
-	auto obj = FindObject(duk_to_string(ctx, 0));
+	auto Object = FindObject(objName);
 	
-	if (!obj)
+	if (!Object)
 	{
 		std::cout << "Object not found: " << objName << '\n';
 		return 0;
 	}
 	
-	duk_push_pointer(ctx, obj);
+	duk_push_pointer(ctx, Object);
 	
-	return 1;  
+	return 1;
+}
+
+static duk_ret_t GetFullName(duk_context* ctx)
+{
+	auto Object = (UObject*)duk_to_pointer(ctx, 0);
+
+	if (!Object)
+	{
+		std::cout << "Invalid object!\n";
+		return 0;
+	}
+
+	duk_push_string(ctx, Object->GetFullName().c_str());
+
+	return 1;
 }
 
 duk_context* ctx;

@@ -56,6 +56,7 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 	}
 
 	auto name = DllPath.filename().generic_string();
+	const auto fileName = name; // TODO: Fix alot of this and dont copy so many variables;
 
 	if (fs::exists(_("script.json")))
 		fs::remove(_("script.json"));
@@ -83,7 +84,7 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 	std::getline(std::cin, description);
 
 	ordered_json j;
-	j[_("script_name")] = ScriptName;
+	j[_("script_name")] = fileName;
 	j[_("language")] = language;
 	j[_("description")] = description; 
 
@@ -103,31 +104,16 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 
 	auto lang = ConvertLanguage(j[_("language")]);
 
-	std::string nameWithExtension;
-	
 	switch (lang)
 	{
 	case CSharp:
-		nameWithExtension = name + _(".dll");
+		file.write(fileName);
 		break;
 	case CPP:
-		nameWithExtension = name + _(".dll");
+		file.write(fileName);
 		break;
 	case JS:
-		nameWithExtension = name + _(".js");
-		break;
-	}
-
-	switch (lang)
-	{
-	case CSharp:
-		file.write(nameWithExtension);
-		break;
-	case CPP:
-		file.write(nameWithExtension);
-		break;
-	case JS:
-		file.write(nameWithExtension);
+		file.write(fileName);
 		break;
 	}
 	
@@ -150,8 +136,8 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 	if (fs::exists(_("script.json")))
 		fs::remove(_("script.json"));
 
-	if (fs::exists(nameWithExtension))
-		fs::remove(nameWithExtension);
+	if (fs::exists(fileName))
+		fs::remove(fileName);
 
 	std::cin.get();
 }
