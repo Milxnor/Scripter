@@ -11,14 +11,17 @@
 using namespace nlohmann;
 namespace fs = std::filesystem;
 
+static int AmountOfInjects = 0; // for some reason, return values are just like broken idk.
+
 namespace Scripter
 {
-    int InjectScripts(fs::path path)
+    void InjectScripts(fs::path path)
     {
-        int AmountOfInjects = 0;
-		
         if (!fs::exists(path))
-            return AmountOfInjects;
+        {
+            MessageBoxA(0, path.generic_string().c_str(), "Path not found!", MB_ICONERROR);
+            return;
+        }
 
         for (auto& p : fs::directory_iterator(path))
         {
@@ -47,16 +50,16 @@ namespace Scripter
                     switch (lang)
                     {
                     case CSharp:
+                        AmountOfInjects += 1;
                         ExecuteCSharp(dll_path.generic_wstring());
-                        ++AmountOfInjects;
                         break;
                     case CPP:
+                        AmountOfInjects += 1;
                         Inject(dll_path.generic_string());
-                        ++AmountOfInjects;
                         break;
                     case JS:
+                        AmountOfInjects += 1;
                         ExecuteJS(dll_path.generic_string());
-                        ++AmountOfInjects;
                         break;
                     default:
                         std::cout << _("Could not deduce language!\n");
@@ -66,11 +69,9 @@ namespace Scripter
                 }
             }
         }
-
-        return AmountOfInjects;
     }
 	
-    int Init() // This extracts the zips. If there is ever a launcher, this will not be needed.
+    void Init() // This extracts the zips. If there is ever a launcher, this will not be needed.
     {
         for (const auto& entry : fs::directory_iterator(fs::current_path() / _("Scripts")))
         {
@@ -78,14 +79,14 @@ namespace Scripter
 
             if (!path.filename().generic_string().contains(_(".script")))
             {
-                std::cout << "Path " << path << " is not a valid path!\n";
+                std::cout << _("Path ") << path << _(" is not a valid path!\n");
 				// return 0;
 			}
 
             if (!fs::exists(path))
             {
                 MessageBoxA(0, _("The file does not exist"), _("Error"), MB_ICONERROR);
-                return 0;
+                return;
             }
 
             auto tempPath = fs::temp_directory_path() / _("ScriptsExtracted"); // + std::to_string(rand() % 100)); // TODO: Remove
@@ -96,7 +97,7 @@ namespace Scripter
             if (!fs::create_directory(tempPath))
             {
                 MessageBoxA(0, _("Could not create the temporary folder!"), _("Error"), MB_ICONERROR);
-                return 0;
+                return;
             }
 			
             miniz_cpp::zip_file file(path.generic_string());
@@ -110,7 +111,7 @@ namespace Scripter
             if (!fs::exists(scriptPath))
             {
                 MessageBoxA(0, _("Could not find script.json!"), _("Error"), MB_ICONERROR);
-                return 0;
+                return;
             }
             			
             if (!fs::exists(AppData::Path))
@@ -118,7 +119,7 @@ namespace Scripter
                 if (!fs::create_directory(AppData::Path));
                 {
                     MessageBoxA(0, _("Unable to create AppData folder!"), _("Scripter"), MB_ICONERROR);
-                    return 0;
+                    return;
                 }
             }
             
@@ -145,7 +146,9 @@ namespace Scripter
                 fs::remove_all(tempPath);
         }
 
-        return InjectScripts(AppData::Path);
+        InjectScripts(AppData::Path);
+
+        return;
     }
 }
 
@@ -170,15 +173,15 @@ DWORD WINAPI Main(LPVOID)
 
     std::cout << _("Setup for ") << FN_Version << "!\n";
 
-    auto AmountOfScripts = Scripter::Init();
+    Scripter::Init();
 
-    if (!AmountOfScripts) // TODO: If one fails, this is 0 for some reason.
+    if (!AmountOfInjects) // TODO: If one fails, this is 0 for some reason.
     {
 		MessageBoxA(0, _("Could not inject any scripts!"), _("Scripter::Init"), MB_OK);
 		return 0;
     }
 	
-    std::cout << _("\nInitialized ") << AmountOfScripts << _(" Scripts!\n");
+    std::cout << _("\nInitialized ") << AmountOfInjects << _(" Scripts!\n");
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dllReason, LPVOID lpReserved)

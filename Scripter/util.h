@@ -60,6 +60,8 @@ bool Inject(const std::string& DLLName) // TODO: Remake // skidded go brr https:
 
 bool ExecuteCSharp(const std::wstring& DLLName) // https://github.com/Vacko/Managed-code-injection/blob/master/Bootstrap/DllMain.cpp // TODO: Return error string instead.
 {
+	MessageBoxW(0, DLLName.c_str(), DLLName.c_str(), MB_ICONINFORMATION);
+	
 	ICLRRuntimeHost* lpRuntimeHost = nullptr;
 	ICLRRuntimeInfo* lpRuntimeInfo = nullptr;
 	ICLRMetaHost* lpMetaHost = nullptr;
