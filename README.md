@@ -20,6 +20,6 @@ go build -o helloworld.dll -buildmode=c-shared
 
 - C# doesn't work anymore.
 
-# Gitbook (tutorial)
+# Tutorial
 
 https://milxnor.gitbook.io/scripter/
