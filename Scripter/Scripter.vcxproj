@@ -97,7 +97,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="languages.h" />
-    <ClInclude Include="UE\enums.h" />
+    <ClInclude Include="UE\other.h" />
     <ClInclude Include="UE\structs.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>

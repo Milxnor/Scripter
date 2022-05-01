@@ -220,6 +220,9 @@ Languages ConvertLanguage(std::string Lang)
 
 std::string AddExtension(const std::string& Path, Languages lang)
 {	
+	if (Path.contains("."))
+		return Path;
+	
 	switch (lang)
 	{
 	case Languages::CSharp:

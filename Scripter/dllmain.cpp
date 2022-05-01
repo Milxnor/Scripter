@@ -19,13 +19,13 @@ namespace Scripter
     {
         if (!fs::exists(path))
         {
-            MessageBoxA(0, path.generic_string().c_str(), "Path not found!", MB_ICONERROR);
+            MessageBoxA(0, path.generic_string().c_str(), _("Path not found!"), MB_ICONERROR);
             return;
         }
 
-        for (auto& p : fs::directory_iterator(path))
+        for (auto& p : fs::directory_iterator(path)) // We could make a script class and then a vector of scripts and set that up in 'Init' but I'm too lazy.
         {
-            if (p.is_directory())
+            if (p.is_directory()) // The user is able to sort the mods by author, version, etc. by creating a folder in Scripts and naming it whatever and putting the scripts in there.
                 InjectScripts(p.path());
 
             else
@@ -35,17 +35,11 @@ namespace Scripter
                 if (filename == _("script.json"))
                 {
                     std::ifstream data(p.path());
-
                     json j = json::parse(data);
-
                     data.close();
 
-                    std::string language = j[_("language")];
-                    std::string scriptName = j[_("script_name")];
-
-                    auto lang = ConvertLanguage(language);
-
-                    auto dll_path = path / scriptName;
+                    auto lang = ConvertLanguage(j[_("language")]);
+                    auto dll_path = path / j[_("filename")];
 
                     switch (lang)
                     {
@@ -130,8 +124,7 @@ namespace Scripter
             data.close();
 
             auto language = ConvertLanguage(j[_("language")]);
-			
-            auto newPathStr = (AppData::Path / AddExtension(j[_("script_name")], language)).generic_string();
+            auto newPathStr = (AppData::Path / AddExtension(j[_("filename")], language)).generic_string();
 			
             newPathStr.erase(newPathStr.find_last_of('.'), 50); // Remove the file extension.
 
@@ -159,15 +152,15 @@ DWORD WINAPI Main(LPVOID)
     FILE* file;
     freopen_s(&file, _("CONOUT$"), _("w"), stdout);
 
-    if (!AppData::Init())
-    {
-        MessageBoxA(0, _("Failed!"), _("AppData"), MB_ICONERROR);
-        return 0;
-    }
-
     if (!Setup())
     {
         MessageBoxA(0, _("Failed!"), _("Setup"), MB_OK);
+        return 0;
+    }
+	
+    if (!AppData::Init())
+    {
+        MessageBoxA(0, _("Failed!"), _("AppData"), MB_ICONERROR);
         return 0;
     }
 
@@ -175,13 +168,15 @@ DWORD WINAPI Main(LPVOID)
 
     Scripter::Init();
 
-    if (!AmountOfInjects) // TODO: If one fails, this is 0 for some reason.
+    if (!AmountOfInjects)
     {
 		MessageBoxA(0, _("Could not inject any scripts!"), _("Scripter::Init"), MB_OK);
 		return 0;
     }
 	
     std::cout << _("\nInitialized ") << AmountOfInjects << _(" Scripts!\n");
+
+    return 0;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dllReason, LPVOID lpReserved)

@@ -71,6 +71,10 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 		std::exit(0);
 	}
 
+	std::string AuthorName;
+	std::cout << _("Enter creator of the script: ");
+	std::getline(std::cin, AuthorName);
+
 	std::string ScriptName;
 	std::cout << _("Enter script name: ");
 	std::getline(std::cin, ScriptName);
@@ -84,9 +88,23 @@ int main(int argc, char* argv[]) // TODO: add args like ScriptBuilder.exe path="
 	std::getline(std::cin, description);
 
 	ordered_json j;
-	j[_("script_name")] = fileName;
+	j[_("author")] = AuthorName;
+	j[_("script_name")] = ScriptName;
+	j[_("filename")] = fileName;
 	j[_("language")] = language;
 	j[_("description")] = description; 
+
+	/*
+	
+	{
+		"author": "Milxnor",
+		"script_name": "NodeJSExample",
+		"filename": "app.js",
+		"description": "Prints Engine.",
+		"language": "JS"
+	}
+	
+	*/
 
 	name = ScriptName;
 	
