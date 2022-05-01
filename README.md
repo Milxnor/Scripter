@@ -15,6 +15,7 @@ C#, JS, C++
 - Make deleting easier/automatic.<br>
 - Add authors to script.json<br>
 - Add more directory/file checking (if it exists).
+- Java support very soon
 
 # FIX SOON
 
