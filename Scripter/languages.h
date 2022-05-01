@@ -27,6 +27,11 @@ extern "C" {
 	{
 		return Object->Member<void>(MemberName);
 	}
+	
+	DLL_EXPORT void* Function(UObject* Object, const char* FunctionName)
+	{
+		return Object->Function(FunctionName);
+	}
 
 	DLL_EXPORT auto ProcessEvent(UObject* Object, UObject* Function, void* Params)
 	{
@@ -60,7 +65,7 @@ static duk_ret_t FindObject(duk_context* ctx)
 	
 	if (!Object)
 	{
-		std::cout << "Object not found: " << objName << '\n';
+		std::cout << _("Object not found: ") << objName << '\n';
 		return 0;
 	}
 	
@@ -75,7 +80,7 @@ static duk_ret_t GetFullName(duk_context* ctx)
 
 	if (!Object)
 	{
-		std::cout << "Invalid object!\n";
+		std::cout << _("Invalid object!\n");
 		return 0;
 	}
 
@@ -94,13 +99,13 @@ void initDuktape()
 	ctx = duk_create_heap_default();
 	
 	duk_push_c_function(ctx, cout, 1 /*number of args*/);
-	duk_put_global_string(ctx, "cout");
+	duk_put_global_string(ctx, _("cout"));
 
 	duk_push_c_function(ctx, FindObject, 1);
-	duk_put_global_string(ctx, "FindObject");
+	duk_put_global_string(ctx, _("FindObject"));
 	
 	duk_push_c_function(ctx, GetFullName, 1);
-	duk_put_global_string(ctx, "GetFullName");
+	duk_put_global_string(ctx, _("GetFullName"));
 
 	bHasDuktapeInitialized = true;
 }

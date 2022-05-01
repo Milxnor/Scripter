@@ -21,6 +21,7 @@ extern "C"
 		const char* GetFullName(UObject* Object);
 
 		void* Member(UObject* Object, const char* MemberName);
+		void* Function(UObject* Object, const char* FunctionName);
 
 		void ProcessEvent(UObject* Object, UObject* Function, void* Params);
 
@@ -43,6 +44,12 @@ struct UObject
 	T* Member(const std::string& MemberName)
 	{
 		return (T*)Imports::Member(this, MemberName);
+	}
+
+	template <typename T>
+	T* Function(const std::string& FunctionName)
+	{
+		return (T*)Imports::Function(this, FunctionName);
 	}
 
 	auto GetFullName()

@@ -123,10 +123,9 @@ namespace Scripter
 
             data.close();
 
-            auto language = ConvertLanguage(j[_("language")]);
-            auto newPathStr = (AppData::Path / AddExtension(j[_("filename")], language)).generic_string();
+            auto newPathStr = (AppData::Path / j[_("script_name")]).generic_string(); // (AppData::Path / AddExtension(j[_("filename")], language)).generic_string();
 			
-            newPathStr.erase(newPathStr.find_last_of('.'), 50); // Remove the file extension.
+            // newPathStr.erase(newPathStr.find_last_of('.'), 50); // Remove the file extension.
 
             auto newPath = fs::path(newPathStr);
 
