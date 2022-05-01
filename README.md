@@ -15,7 +15,7 @@ C#, JS, C++
 - Make deleting easier/automatic.<br>
 - Add authors to script.json<br>
 - Add more directory/file checking (if it exists).
-- Java support very soon
+- Add Java using https://stackoverflow.com/questions/55710599/how-to-load-access-and-use-c-dll-functions-in-java, the issue is that my Java knowledge isn't great and I don't know how to build as a DLL.
 
 # FIX SOON
 
