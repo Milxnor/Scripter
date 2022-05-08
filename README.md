@@ -1,6 +1,6 @@
 # Scripter
 A dll that allows you to easily mod Fortnite in popular coding languages.<br>
-Supports s1-s16 (should work on latest but idk).
+Tested on 6.10 and 20.20, should work for every version besides s16-18.
 
 # Supported languages
 
@@ -14,14 +14,12 @@ C#, JS, C++
 go build -o helloworld.dll -buildmode=c-shared
 - Figure out how to add rust. The issue is that it can only call C.<br>
 - Make deleting easier/automatic.<br>
-- Add authors to script.json<br>
-- Add more directory/file checking (if it exists).
 - Add Java using https://stackoverflow.com/questions/55710599/how-to-load-access-and-use-c-dll-functions-in-java, the issue is that my Java knowledge isn't great and I don't know how to build as a DLL.
 
 # FIX SOON
 
-- Fix NodeJS crashing
+- C# doesn't work anymore.
 
-# Gitbook (tutorial)
+# Tutorial
 
 https://milxnor.gitbook.io/scripter/
