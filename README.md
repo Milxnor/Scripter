@@ -1,6 +1,6 @@
 # Scripter
 A dll that allows you to easily mod Fortnite in popular coding languages.<br>
-Tested on 6.10 and 20.20, should work for every version besides s16-18.
+Tested on 6.10 and 20.20, should work for <b>every</b> version.<br>
 
 # Supported languages
 
